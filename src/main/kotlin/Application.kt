@@ -1,5 +1,6 @@
 package com.example.mutlabocnotes
 
+import com.example.mutlabocnotes.database.DatabaseFactory
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -13,6 +14,11 @@ fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 fun Application.module() {
     val appLog = environment.log
+
+    // Инициализируем БД при старте приложения.
+    // Если подключение не работает, backend должен упасть сразу,
+    // а не в момент первого реального запроса.
+    DatabaseFactory.init(environment.config)
 
     install(CallLogging)
 
@@ -34,7 +40,10 @@ fun Application.module() {
         get("/") {
             call.respond(
                 HttpStatusCode.OK,
-                mapOf("service" to "notes-backend", "status" to "running")
+                mapOf(
+                    "service" to "notes-backend",
+                    "status" to "running"
+                )
             )
         }
 
@@ -42,6 +51,19 @@ fun Application.module() {
             call.respond(
                 HttpStatusCode.OK,
                 mapOf("status" to "ok")
+            )
+        }
+
+        // Временный endpoint для проверки подключения к PostgreSQL
+        get("/health/db") {
+            val dbInfo = DatabaseFactory.testConnection()
+
+            call.respond(
+                HttpStatusCode.OK,
+                mapOf(
+                    "status" to "ok",
+                    "database" to dbInfo
+                )
             )
         }
     }

@@ -24,6 +24,12 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.server.netty)
     implementation(libs.logback.classic)
+
+    implementation("org.jetbrains.exposed:exposed-core:1.1.1")
+    implementation("org.jetbrains.exposed:exposed-jdbc:1.1.1")
+    implementation("com.zaxxer:HikariCP:6.3.3")
+    implementation("org.postgresql:postgresql:42.7.10")
+
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
 }
