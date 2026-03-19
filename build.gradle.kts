@@ -1,3 +1,6 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.api.file.DuplicatesStrategy
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
@@ -29,7 +32,16 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:1.1.1")
     implementation("com.zaxxer:HikariCP:6.3.3")
     implementation("org.postgresql:postgresql:42.7.10")
+    implementation("org.flywaydb:flyway-core:10.18.2")
+    implementation("org.flywaydb:flyway-database-postgresql:10.18.2")
+    implementation("org.jetbrains.exposed:exposed-java-time:1.1.1")
 
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
+}
+
+tasks.named<ShadowJar>("shadowJar") {
+    archiveFileName.set("notes-backend-all.jar")
+    mergeServiceFiles()
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }

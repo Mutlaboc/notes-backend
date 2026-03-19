@@ -1,24 +1,34 @@
 package com.example.mutlabocnotes
 
 import com.example.mutlabocnotes.database.DatabaseFactory
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.calllogging.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import com.example.mutlabocnotes.notes.FirebaseUserResolver
+import com.example.mutlabocnotes.notes.NotesRepository
+import com.example.mutlabocnotes.notes.NotesService
+import com.example.mutlabocnotes.notes.notesRoutes
+import io.ktor.http.HttpStatusCode
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.application.call
+import io.ktor.server.plugins.BadRequestException
+import io.ktor.server.plugins.calllogging.CallLogging
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.response.respond
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 fun Application.module() {
     val appLog = environment.log
 
-    // Инициализируем БД при старте приложения.
-    // Если подключение не работает, backend должен упасть сразу,
-    // а не в момент первого реального запроса.
+    FlywayRunner.migrate(environment.config)
     DatabaseFactory.init(environment.config)
+
+    val notesRepository = NotesRepository()
+    val notesService = NotesService(notesRepository)
+    val firebaseUserResolver = FirebaseUserResolver()
 
     install(CallLogging)
 
@@ -27,6 +37,13 @@ fun Application.module() {
     }
 
     install(StatusPages) {
+        exception<BadRequestException> { call, cause ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                mapOf("error" to (cause.message ?: "bad_request"))
+            )
+        }
+
         exception<Throwable> { call, cause ->
             appLog.error("Unhandled error", cause)
             call.respond(
@@ -54,7 +71,6 @@ fun Application.module() {
             )
         }
 
-        // Временный endpoint для проверки подключения к PostgreSQL
         get("/health/db") {
             val dbInfo = DatabaseFactory.testConnection()
 
@@ -66,5 +82,10 @@ fun Application.module() {
                 )
             )
         }
+
+        notesRoutes(
+            notesService = notesService,
+            firebaseUserResolver = firebaseUserResolver
+        )
     }
 }
