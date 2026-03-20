@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
 package com.example.mutlabocnotes.notes
 
 import com.example.mutlabocnotes.database.DatabaseFactory
@@ -6,19 +8,19 @@ import com.example.mutlabocnotes.database.table.NotesTable
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
-import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
 import java.time.Instant
 import java.time.ZoneOffset
-import java.util.UUID
+import kotlin.uuid.Uuid
 
 class NotesRepository {
 
-    suspend fun getAllByUser(userId: UUID): List<NoteModel> =
+    suspend fun getAllByUser(userId: Uuid): List<NoteModel> =
         DatabaseFactory.dbQuery {
             val noteRows = NotesTable
                 .selectAll()
@@ -53,7 +55,7 @@ class NotesRepository {
             }
         }
 
-    suspend fun getById(userId: UUID, noteId: UUID): NoteModel? =
+    suspend fun getById(userId: Uuid, noteId: Uuid): NoteModel? =
         DatabaseFactory.dbQuery {
             val noteRow = NotesTable
                 .selectAll()
@@ -76,10 +78,10 @@ class NotesRepository {
             noteRow.toNoteModel(checklist)
         }
 
-    suspend fun create(userId: UUID, request: CreateNoteRequestDto): NoteModel =
-        DatabaseFactory.dbQuery {
-            val noteId = UUID.randomUUID()
+    suspend fun create(userId: Uuid, request: CreateNoteRequestDto): NoteModel {
+        val noteId = Uuid.random()
 
+        DatabaseFactory.dbQuery {
             NotesTable.insert {
                 it[id] = noteId
                 it[this.userId] = userId
@@ -93,11 +95,13 @@ class NotesRepository {
             }
 
             insertChecklist(noteId, normalizedChecklist(request.category, request.checklist))
-            getById(userId, noteId)!!
         }
 
-    suspend fun update(userId: UUID, noteId: UUID, request: UpdateNoteRequestDto): NoteModel? =
-        DatabaseFactory.dbQuery {
+        return getById(userId, noteId)!!
+    }
+
+    suspend fun update(userId: Uuid, noteId: Uuid, request: UpdateNoteRequestDto): NoteModel? {
+        val updated = DatabaseFactory.dbQuery {
             val updatedRows = NotesTable.update(
                 where = { (NotesTable.id eq noteId) and (NotesTable.userId eq userId) }
             ) {
@@ -111,41 +115,40 @@ class NotesRepository {
             }
 
             if (updatedRows == 0) {
-                return@dbQuery null
+                false
+            } else {
+                NoteChecklistItemsTable.deleteWhere { NoteChecklistItemsTable.noteId eq noteId }
+                insertChecklist(noteId, normalizedChecklist(request.category, request.checklist))
+                true
             }
-
-            NoteChecklistItemsTable.deleteWhere { NoteChecklistItemsTable.noteId eq noteId }
-            insertChecklist(noteId, normalizedChecklist(request.category, request.checklist))
-
-            getById(userId, noteId)
         }
 
-    suspend fun delete(userId: UUID, noteId: UUID): Boolean =
+        return if (updated) getById(userId, noteId) else null
+    }
+
+    suspend fun delete(userId: Uuid, noteId: Uuid): Boolean =
         DatabaseFactory.dbQuery {
             NotesTable.deleteWhere {
                 (NotesTable.id eq noteId) and (NotesTable.userId eq userId)
             } > 0
         }
 
-    suspend fun updateCompletion(userId: UUID, noteId: UUID, isCompleted: Boolean): NoteModel? =
-        DatabaseFactory.dbQuery {
-            val updatedRows = NotesTable.update(
+    suspend fun updateCompletion(userId: Uuid, noteId: Uuid, isCompleted: Boolean): NoteModel? {
+        val updated = DatabaseFactory.dbQuery {
+            NotesTable.update(
                 where = { (NotesTable.id eq noteId) and (NotesTable.userId eq userId) }
             ) {
                 it[NotesTable.isCompleted] = isCompleted
-            }
-
-            if (updatedRows == 0) {
-                return@dbQuery null
-            }
-
-            getById(userId, noteId)
+            } > 0
         }
 
-    private fun insertChecklist(noteId: UUID, checklist: List<ChecklistItemDto>) {
+        return if (updated) getById(userId, noteId) else null
+    }
+
+    private fun insertChecklist(noteId: Uuid, checklist: List<ChecklistItemDto>) {
         checklist.forEachIndexed { index, item ->
             NoteChecklistItemsTable.insert {
-                it[id] = UUID.randomUUID()
+                it[id] = Uuid.random()
                 it[this.noteId] = noteId
                 it[position] = index
                 it[text] = item.text

@@ -1,6 +1,7 @@
+@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
 package com.example.mutlabocnotes.database.table
 
-import org.jetbrains.exposed.v1.core.PrimaryKey
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.javatime.timestampWithTimeZone
 
@@ -17,6 +18,4 @@ object NotesTable : Table("notes") {
     val isCompleted = bool("is_completed").default(false)
     val createdAt = timestampWithTimeZone("created_at")
     val updatedAt = timestampWithTimeZone("updated_at")
-
-    override val primaryKey = PrimaryKey(id)
 }

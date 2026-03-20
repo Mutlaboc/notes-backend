@@ -1,26 +1,28 @@
+@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
 package com.example.mutlabocnotes.notes
 
-import java.util.UUID
+import kotlin.uuid.Uuid
 
 class NotesService(
     private val repository: NotesRepository
 ) {
-    suspend fun getAll(userId: UUID): List<NoteResponseDto> =
+    suspend fun getAll(userId: Uuid): List<NoteResponseDto> =
         repository.getAllByUser(userId).map { it.toDto() }
 
-    suspend fun getById(userId: UUID, noteId: UUID): NoteResponseDto? =
+    suspend fun getById(userId: Uuid, noteId: Uuid): NoteResponseDto? =
         repository.getById(userId, noteId)?.toDto()
 
-    suspend fun create(userId: UUID, request: CreateNoteRequestDto): NoteResponseDto =
+    suspend fun create(userId: Uuid, request: CreateNoteRequestDto): NoteResponseDto =
         repository.create(userId, request).toDto()
 
-    suspend fun update(userId: UUID, noteId: UUID, request: UpdateNoteRequestDto): NoteResponseDto? =
+    suspend fun update(userId: Uuid, noteId: Uuid, request: UpdateNoteRequestDto): NoteResponseDto? =
         repository.update(userId, noteId, request)?.toDto()
 
-    suspend fun delete(userId: UUID, noteId: UUID): Boolean =
+    suspend fun delete(userId: Uuid, noteId: Uuid): Boolean =
         repository.delete(userId, noteId)
 
-    suspend fun updateCompletion(userId: UUID, noteId: UUID, isCompleted: Boolean): NoteResponseDto? =
+    suspend fun updateCompletion(userId: Uuid, noteId: Uuid, isCompleted: Boolean): NoteResponseDto? =
         repository.updateCompletion(userId, noteId, isCompleted)?.toDto()
 
     private fun NoteModel.toDto(): NoteResponseDto =

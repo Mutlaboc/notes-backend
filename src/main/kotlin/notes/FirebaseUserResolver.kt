@@ -1,17 +1,19 @@
+@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
 package com.example.mutlabocnotes.notes
 
 import com.example.mutlabocnotes.database.DatabaseFactory
 import com.example.mutlabocnotes.database.table.UsersTable
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.plugins.BadRequestException
-import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import java.util.UUID
+import kotlin.uuid.Uuid
 
 class FirebaseUserResolver {
 
-    suspend fun resolveUserId(call: ApplicationCall): UUID {
+    suspend fun resolveUserId(call: ApplicationCall): Uuid {
         val firebaseUid = call.request.headers["X-Firebase-Uid"]
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
@@ -27,7 +29,7 @@ class FirebaseUserResolver {
                 existing[UsersTable.id]
             } else {
                 UsersTable.insert {
-                    it[id] = UUID.randomUUID()
+                    it[id] = Uuid.random()
                     it[UsersTable.firebaseUid] = firebaseUid
                 }[UsersTable.id]
             }

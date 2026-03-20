@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
 package com.example.mutlabocnotes.notes
 
 import io.ktor.http.HttpStatusCode
@@ -12,7 +14,7 @@ import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
-import java.util.UUID
+import kotlin.uuid.Uuid
 
 fun Route.notesRoutes(
     notesService: NotesService,
@@ -94,5 +96,5 @@ fun Route.notesRoutes(
     }
 }
 
-private fun String.toUuidOrNull(): UUID? =
-    runCatching { UUID.fromString(this) }.getOrNull()
+private fun String.toUuidOrNull(): Uuid? =
+    runCatching { Uuid.parse(this) }.getOrNull()

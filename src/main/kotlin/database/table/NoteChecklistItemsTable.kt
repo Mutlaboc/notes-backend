@@ -1,6 +1,7 @@
+@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
 package com.example.mutlabocnotes.database.table
 
-import org.jetbrains.exposed.v1.core.PrimaryKey
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.javatime.timestampWithTimeZone
 
@@ -11,6 +12,4 @@ object NoteChecklistItemsTable : Table("note_checklist_items") {
     val text = text("text")
     val isChecked = bool("is_checked").default(false)
     val createdAt = timestampWithTimeZone("created_at")
-
-    override val primaryKey = PrimaryKey(id)
 }
