@@ -1,6 +1,14 @@
 package com.example.mutlabocnotes
 
+import com.example.mutlabocnotes.auth.AuthRepository
+import com.example.mutlabocnotes.auth.AuthService
+import com.example.mutlabocnotes.auth.BcryptPasswordHasher
+import com.example.mutlabocnotes.auth.JwtTokenService
+import com.example.mutlabocnotes.auth.authRoutes
+import com.example.mutlabocnotes.auth.configureJwtAuthentication
+import com.example.mutlabocnotes.auth.readJwtConfig
 import com.example.mutlabocnotes.database.DatabaseFactory
+import com.example.mutlabocnotes.homecards.homeCardsRoutes
 import com.example.mutlabocnotes.notes.FirebaseUserResolver
 import com.example.mutlabocnotes.notes.NotesRepository
 import com.example.mutlabocnotes.notes.NotesService
@@ -8,8 +16,8 @@ import com.example.mutlabocnotes.notes.notesRoutes
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
-import io.ktor.server.application.install
 import io.ktor.server.application.call
+import io.ktor.server.application.install
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -17,7 +25,6 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
-import com.example.mutlabocnotes.homecards.homeCardsRoutes
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
@@ -31,11 +38,26 @@ fun Application.module() {
     val notesService = NotesService(notesRepository)
     val firebaseUserResolver = FirebaseUserResolver()
 
+    val jwtConfig = environment.config.readJwtConfig()
+    val authRepository = AuthRepository()
+    val passwordHasher = BcryptPasswordHasher(cost = 12)
+    val jwtTokenService = JwtTokenService(jwtConfig)
+    val authService = AuthService(
+        authRepository = authRepository,
+        passwordHasher = passwordHasher,
+        jwtTokenService = jwtTokenService
+    )
+
     install(CallLogging)
 
     install(ContentNegotiation) {
         json()
     }
+
+    configureJwtAuthentication(
+        jwtConfig = jwtConfig,
+        jwtTokenService = jwtTokenService
+    )
 
     install(StatusPages) {
         exception<BadRequestException> { call, cause ->
@@ -84,12 +106,13 @@ fun Application.module() {
             )
         }
 
+        authRoutes(authService)
+
         notesRoutes(
             notesService = notesService,
             firebaseUserResolver = firebaseUserResolver
         )
 
         homeCardsRoutes()
-
     }
 }
