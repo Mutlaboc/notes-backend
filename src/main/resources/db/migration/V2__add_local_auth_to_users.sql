@@ -1,0 +1,11 @@
+ALTER TABLE users
+    ALTER COLUMN firebase_uid DROP NOT NULL;
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS email VARCHAR(320);
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS password_hash TEXT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_users_email
+    ON users(email);

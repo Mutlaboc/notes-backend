@@ -38,6 +38,10 @@ dependencies {
 
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
+    implementation("io.ktor:ktor-server-auth")
+    implementation("io.ktor:ktor-server-auth-jwt")
+    implementation("com.auth0:java-jwt")
+    implementation("org.mindrot:jbcrypt:0.4")
 }
 
 tasks.named<ShadowJar>("shadowJar") {

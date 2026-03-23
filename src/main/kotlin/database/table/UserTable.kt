@@ -5,10 +5,9 @@ import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.javatime.timestampWithTimeZone
 
 object UsersTable : Table("users") {
-    val id = uuid("id")
-    val email = text("email").nullable()
+    val firebaseUid = varchar("firebase_uid", 255).nullable()
+    val email = varchar("email", 320).nullable().uniqueIndex("ux_users_email")
     val passwordHash = text("password_hash").nullable()
-    val firebaseUid = text("firebase_uid").nullable()
     val displayName = text("display_name").nullable()
     val isActive = bool("is_active").default(true)
     val createdAt = timestampWithTimeZone("created_at")
