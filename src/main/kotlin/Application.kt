@@ -17,6 +17,7 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import com.example.mutlabocnotes.homecards.homeCardsRoutes
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
@@ -87,5 +88,8 @@ fun Application.module() {
             notesService = notesService,
             firebaseUserResolver = firebaseUserResolver
         )
+
+        homeCardsRoutes()
+
     }
 }
