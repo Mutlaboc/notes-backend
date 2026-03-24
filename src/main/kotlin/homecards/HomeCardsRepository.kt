@@ -13,9 +13,7 @@ import org.jetbrains.exposed.v1.jdbc.update
 
 class HomeCardsRepository {
 
-    fun getAllForFirebaseUid(firebaseUid: String): List<HomeCardDto> = transaction {
-        val userId = resolveOrCreateUserId(firebaseUid)
-
+    fun getAllForUser(userId: UUID): List<HomeCardDto> = transaction {
         HomeCardsTable
             .selectAll()
             .where { HomeCardsTable.userId eq userId }
@@ -55,8 +53,7 @@ class HomeCardsRepository {
             }
     }
 
-    fun getByIdForFirebaseUid(firebaseUid: String, cardId: String): HomeCardDto? = transaction {
-        val userId = resolveOrCreateUserId(firebaseUid)
+    fun getByIdForUser(userId: UUID, cardId: String): HomeCardDto? = transaction {
         val uuid = runCatching { UUID.fromString(cardId) }.getOrNull() ?: return@transaction null
 
         val row = HomeCardsTable
@@ -96,8 +93,7 @@ class HomeCardsRepository {
         )
     }
 
-    fun createForFirebaseUid(firebaseUid: String, request: HomeCardUpsertRequestDto): HomeCardDto = transaction {
-        val userId = resolveOrCreateUserId(firebaseUid)
+    fun createForUser(userId: UUID, request: HomeCardUpsertRequestDto): HomeCardDto = transaction {
         val cardId = UUID.randomUUID()
         val now = OffsetDateTime.now(ZoneOffset.UTC)
         val createdAtValue = if (request.createdAt > 0) epochMillisToOffsetDateTime(request.createdAt) else now
@@ -146,8 +142,7 @@ class HomeCardsRepository {
         )
     }
 
-    fun updateForFirebaseUid(firebaseUid: String, cardId: String, request: HomeCardUpsertRequestDto): HomeCardDto? = transaction {
-        val userId = resolveOrCreateUserId(firebaseUid)
+    fun updateForUser(userId: UUID, cardId: String, request: HomeCardUpsertRequestDto): HomeCardDto? = transaction {
         val uuid = runCatching { UUID.fromString(cardId) }.getOrNull() ?: return@transaction null
 
         val existing = HomeCardsTable
@@ -205,8 +200,7 @@ class HomeCardsRepository {
         )
     }
 
-    fun deleteForFirebaseUid(firebaseUid: String, cardId: String): Boolean = transaction {
-        val userId = resolveOrCreateUserId(firebaseUid)
+    fun deleteForUser(userId: UUID, cardId: String): Boolean = transaction {
         val uuid = runCatching { UUID.fromString(cardId) }.getOrNull() ?: return@transaction false
 
         val deleted = HomeCardsTable.deleteWhere {
@@ -214,26 +208,6 @@ class HomeCardsRepository {
         }
 
         deleted > 0
-    }
-
-    private fun resolveOrCreateUserId(firebaseUid: String): UUID {
-        val existing = HomeCardsUsersLookupTable
-            .selectAll()
-            .where { HomeCardsUsersLookupTable.firebaseUid eq firebaseUid }
-            .singleOrNull()
-
-        if (existing != null) {
-            return existing[HomeCardsUsersLookupTable.id]
-        }
-
-        val userId = UUID.randomUUID()
-
-        HomeCardsUsersLookupTable.insert {
-            it[HomeCardsUsersLookupTable.id] = userId
-            it[HomeCardsUsersLookupTable.firebaseUid] = firebaseUid
-        }
-
-        return userId
     }
 
     private fun epochMillisToOffsetDateTime(value: Long): OffsetDateTime =

@@ -63,7 +63,8 @@ class AuthService(
         return AuthUserResponseDto(
             id = user.id.toString(),
             email = email,
-            displayName = user.displayName
+            displayName = user.displayName,
+            bridgeUserKey = user.firebaseUid
         )
     }
 
@@ -73,10 +74,12 @@ class AuthService(
         return AuthResponseDto(
             accessToken = jwtTokenService.generateAccessToken(user),
             expiresInSeconds = jwtTokenService.expiresInSeconds(),
+            bridgeUserKey = user.firebaseUid,
             user = AuthUserResponseDto(
                 id = user.id.toString(),
                 email = email,
-                displayName = user.displayName
+                displayName = user.displayName,
+                bridgeUserKey = user.firebaseUid
             )
         )
     }

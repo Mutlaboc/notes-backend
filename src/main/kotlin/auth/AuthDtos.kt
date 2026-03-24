@@ -19,7 +19,8 @@ data class LoginRequestDto(
 data class AuthUserResponseDto(
     val id: String,
     val email: String,
-    val displayName: String? = null
+    val displayName: String? = null,
+    val bridgeUserKey: String? = null
 )
 
 @Serializable
@@ -27,5 +28,6 @@ data class AuthResponseDto(
     val accessToken: String,
     val tokenType: String = "Bearer",
     val expiresInSeconds: Long,
+    val bridgeUserKey: String? = null,
     val user: AuthUserResponseDto
 )

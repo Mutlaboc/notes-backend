@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
 package com.example.mutlabocnotes.homecards
 
 import kotlinx.serialization.Serializable

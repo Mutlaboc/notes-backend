@@ -9,7 +9,6 @@ import com.example.mutlabocnotes.auth.configureJwtAuthentication
 import com.example.mutlabocnotes.auth.readJwtConfig
 import com.example.mutlabocnotes.database.DatabaseFactory
 import com.example.mutlabocnotes.homecards.homeCardsRoutes
-import com.example.mutlabocnotes.notes.FirebaseUserResolver
 import com.example.mutlabocnotes.notes.NotesRepository
 import com.example.mutlabocnotes.notes.NotesService
 import com.example.mutlabocnotes.notes.notesRoutes
@@ -36,7 +35,6 @@ fun Application.module() {
 
     val notesRepository = NotesRepository()
     val notesService = NotesService(notesRepository)
-    val firebaseUserResolver = FirebaseUserResolver()
 
     val jwtConfig = environment.config.readJwtConfig()
     val authRepository = AuthRepository()
@@ -110,7 +108,6 @@ fun Application.module() {
 
         notesRoutes(
             notesService = notesService,
-            firebaseUserResolver = firebaseUserResolver
         )
 
         homeCardsRoutes()

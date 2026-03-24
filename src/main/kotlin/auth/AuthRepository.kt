@@ -39,6 +39,7 @@ class AuthRepository {
         displayName: String?
     ): AuthUserModel {
         val userId = Uuid.random()
+        val bridgeUserKey = buildBridgeUserKey(userId)
 
         DatabaseFactory.dbQuery {
             UsersTable.insert {
@@ -46,7 +47,7 @@ class AuthRepository {
                 it[UsersTable.email] = email
                 it[UsersTable.passwordHash] = passwordHash
                 it[UsersTable.displayName] = displayName
-                it[UsersTable.firebaseUid] = null
+                it[UsersTable.firebaseUid] = bridgeUserKey
                 it[UsersTable.isActive] = true
             }
         }
@@ -73,4 +74,6 @@ class AuthRepository {
             displayName = this[UsersTable.displayName],
             isActive = this[UsersTable.isActive]
         )
+
+    private fun buildBridgeUserKey(userId: Uuid): String = "local:${userId}"
 }
