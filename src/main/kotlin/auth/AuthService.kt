@@ -2,12 +2,15 @@
 
 package com.example.mutlabocnotes.auth
 
+import java.time.OffsetDateTime
 import kotlin.uuid.Uuid
 
 class AuthService(
     private val authRepository: AuthRepository,
+    private val refreshTokenRepository: RefreshTokenRepository,
     private val passwordHasher: PasswordHasher,
-    private val jwtTokenService: JwtTokenService
+    private val jwtTokenService: JwtTokenService,
+    private val refreshTokenService: RefreshTokenService
 ) {
 
     suspend fun register(request: RegisterRequestDto): AuthResponseDto {
@@ -50,6 +53,31 @@ class AuthService(
         return buildAuthResponse(user)
     }
 
+    suspend fun refresh(request: RefreshTokenRequestDto): AuthResponseDto {
+        val rawRefreshToken = request.refreshToken.trim()
+        require(rawRefreshToken.isNotEmpty()) { "Refresh token is required" }
+
+        val tokenHash = refreshTokenService.hash(rawRefreshToken)
+        val storedToken = refreshTokenRepository.findByTokenHash(tokenHash)
+            ?: throw UnauthorizedAuthException()
+
+        if (storedToken.revokedAt != null || storedToken.expiresAt.isBefore(OffsetDateTime.now())) {
+            throw UnauthorizedAuthException()
+        }
+
+        val user = authRepository.findById(storedToken.userId)
+            ?: throw UnauthorizedAuthException()
+
+        if (!user.isActive) {
+            throw UnauthorizedAuthException()
+        }
+
+        refreshTokenRepository.revokeByTokenHash(tokenHash)
+        authRepository.updateLastLogin(user.id)
+
+        return buildAuthResponse(user)
+    }
+
     suspend fun me(userId: Uuid): AuthUserResponseDto {
         val user = authRepository.findById(userId)
             ?: throw UnauthorizedAuthException()
@@ -68,12 +96,15 @@ class AuthService(
         )
     }
 
-    private fun buildAuthResponse(user: AuthUserModel): AuthResponseDto {
+    private suspend fun buildAuthResponse(user: AuthUserModel): AuthResponseDto {
         val email = user.email ?: error("User email is null")
+        val refreshToken = issueRefreshToken(user.id)
 
         return AuthResponseDto(
             accessToken = jwtTokenService.generateAccessToken(user),
+            refreshToken = refreshToken,
             expiresInSeconds = jwtTokenService.expiresInSeconds(),
+            refreshExpiresInSeconds = refreshTokenService.refreshExpiresInSeconds(),
             bridgeUserKey = user.firebaseUid,
             user = AuthUserResponseDto(
                 id = user.id.toString(),
@@ -82,6 +113,19 @@ class AuthService(
                 bridgeUserKey = user.firebaseUid
             )
         )
+    }
+
+    private suspend fun issueRefreshToken(userId: Uuid): String {
+        val rawToken = refreshTokenService.generateToken()
+        val tokenHash = refreshTokenService.hash(rawToken)
+
+        refreshTokenRepository.create(
+            userId = userId,
+            tokenHash = tokenHash,
+            expiresAt = refreshTokenService.expiresAt()
+        )
+
+        return rawToken
     }
 
     private fun normalizeEmail(email: String): String {

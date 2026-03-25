@@ -45,6 +45,18 @@ fun Route.authRoutes(
             }
         }
 
+        post("/refresh") {
+            try {
+                val request = call.receive<RefreshTokenRequestDto>()
+                val response = authService.refresh(request)
+                call.respond(HttpStatusCode.OK, response)
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "invalid_request")))
+            } catch (e: UnauthorizedAuthException) {
+                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "unauthorized"))
+            }
+        }
+
         authenticate("auth-jwt") {
             get("/me") {
                 val principal = call.principal<JWTPrincipal>()

@@ -16,6 +16,11 @@ data class LoginRequestDto(
 )
 
 @Serializable
+data class RefreshTokenRequestDto(
+    val refreshToken: String
+)
+
+@Serializable
 data class AuthUserResponseDto(
     val id: String,
     val email: String,
@@ -26,8 +31,10 @@ data class AuthUserResponseDto(
 @Serializable
 data class AuthResponseDto(
     val accessToken: String,
+    val refreshToken: String,
     val tokenType: String = "Bearer",
     val expiresInSeconds: Long,
+    val refreshExpiresInSeconds: Long,
     val bridgeUserKey: String? = null,
     val user: AuthUserResponseDto
 )

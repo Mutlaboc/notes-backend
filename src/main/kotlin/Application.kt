@@ -4,6 +4,8 @@ import com.example.mutlabocnotes.auth.AuthRepository
 import com.example.mutlabocnotes.auth.AuthService
 import com.example.mutlabocnotes.auth.BcryptPasswordHasher
 import com.example.mutlabocnotes.auth.JwtTokenService
+import com.example.mutlabocnotes.auth.RefreshTokenRepository
+import com.example.mutlabocnotes.auth.RefreshTokenService
 import com.example.mutlabocnotes.auth.authRoutes
 import com.example.mutlabocnotes.auth.configureJwtAuthentication
 import com.example.mutlabocnotes.auth.readJwtConfig
@@ -38,12 +40,16 @@ fun Application.module() {
 
     val jwtConfig = environment.config.readJwtConfig()
     val authRepository = AuthRepository()
+    val refreshTokenRepository = RefreshTokenRepository()
     val passwordHasher = BcryptPasswordHasher(cost = 12)
     val jwtTokenService = JwtTokenService(jwtConfig)
+    val refreshTokenService = RefreshTokenService(jwtConfig)
     val authService = AuthService(
         authRepository = authRepository,
+        refreshTokenRepository = refreshTokenRepository,
         passwordHasher = passwordHasher,
-        jwtTokenService = jwtTokenService
+        jwtTokenService = jwtTokenService,
+        refreshTokenService = refreshTokenService
     )
 
     install(CallLogging)

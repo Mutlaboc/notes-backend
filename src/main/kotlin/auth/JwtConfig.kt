@@ -7,7 +7,8 @@ data class JwtConfig(
     val audience: String,
     val realm: String,
     val secret: String,
-    val accessTokenTtlSeconds: Long
+    val accessTokenTtlSeconds: Long,
+    val refreshTokenTtlSeconds: Long
 )
 
 fun ApplicationConfig.readJwtConfig(): JwtConfig {
@@ -23,6 +24,7 @@ fun ApplicationConfig.readJwtConfig(): JwtConfig {
         audience = config.property("audience").getString(),
         realm = config.property("realm").getString(),
         secret = secret,
-        accessTokenTtlSeconds = config.property("accessTokenTtlSeconds").getString().toLong()
+        accessTokenTtlSeconds = config.property("accessTokenTtlSeconds").getString().toLong(),
+        refreshTokenTtlSeconds = config.property("refreshTokenTtlSeconds").getString().toLong()
     )
 }
