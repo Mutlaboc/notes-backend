@@ -37,9 +37,31 @@ class AuthRepository {
         email: String,
         passwordHash: String,
         displayName: String?
+    ): AuthUserModel =
+        createUser(
+            email = email,
+            passwordHash = passwordHash,
+            displayName = displayName
+        )
+
+    suspend fun createSocialUser(
+        email: String,
+        displayName: String?
+    ): AuthUserModel =
+        createUser(
+            email = email,
+            passwordHash = null,
+            displayName = displayName
+        )
+
+    private suspend fun createUser(
+        email: String,
+        passwordHash: String?,
+        displayName: String?
     ): AuthUserModel {
         val userId = Uuid.random()
         val bridgeUserKey = buildBridgeUserKey(userId)
+        val now = Instant.now().atOffset(ZoneOffset.UTC)
 
         DatabaseFactory.dbQuery {
             UsersTable.insert {
@@ -49,6 +71,9 @@ class AuthRepository {
                 it[UsersTable.displayName] = displayName
                 it[UsersTable.firebaseUid] = bridgeUserKey
                 it[UsersTable.isActive] = true
+                it[UsersTable.createdAt] = now
+                it[UsersTable.updatedAt] = now
+                it[UsersTable.lastLoginAt] = null
             }
         }
 

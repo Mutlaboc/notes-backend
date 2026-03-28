@@ -3,16 +3,18 @@ package com.example.mutlabocnotes
 import com.example.mutlabocnotes.auth.AuthRepository
 import com.example.mutlabocnotes.auth.AuthService
 import com.example.mutlabocnotes.auth.BcryptPasswordHasher
+import com.example.mutlabocnotes.auth.DatabaseSocialUserResolver
 import com.example.mutlabocnotes.auth.ErrorResponseDto
 import com.example.mutlabocnotes.auth.JwtTokenService
 import com.example.mutlabocnotes.auth.NotReadyGoogleTokenVerifier
-import com.example.mutlabocnotes.auth.NotReadySocialUserResolver
 import com.example.mutlabocnotes.auth.NotReadyYandexTokenVerifier
 import com.example.mutlabocnotes.auth.RefreshTokenRepository
 import com.example.mutlabocnotes.auth.RefreshTokenService
 import com.example.mutlabocnotes.auth.SocialAuthNotReadyException
 import com.example.mutlabocnotes.auth.SocialAuthService
+import com.example.mutlabocnotes.auth.SocialIdentityResolutionException
 import com.example.mutlabocnotes.auth.SocialTokenValidationException
+import com.example.mutlabocnotes.auth.UserIdentityRepository
 import com.example.mutlabocnotes.auth.authRoutes
 import com.example.mutlabocnotes.auth.configureJwtAuthentication
 import com.example.mutlabocnotes.auth.readJwtConfig
@@ -51,6 +53,7 @@ fun Application.module() {
 
     val authRepository = AuthRepository()
     val refreshTokenRepository = RefreshTokenRepository()
+    val userIdentityRepository = UserIdentityRepository()
     val passwordHasher = BcryptPasswordHasher(cost = 12)
     val jwtTokenService = JwtTokenService(jwtConfig)
     val refreshTokenService = RefreshTokenService(jwtConfig)
@@ -67,7 +70,10 @@ fun Application.module() {
         authService = authService,
         googleTokenVerifier = NotReadyGoogleTokenVerifier(socialAuthConfig),
         yandexTokenVerifier = NotReadyYandexTokenVerifier(socialAuthConfig),
-        socialUserResolver = NotReadySocialUserResolver()
+        socialUserResolver = DatabaseSocialUserResolver(
+            authRepository = authRepository,
+            userIdentityRepository = userIdentityRepository
+        )
     )
 
     install(CallLogging)
@@ -93,6 +99,13 @@ fun Application.module() {
             call.respond(
                 HttpStatusCode.Unauthorized,
                 ErrorResponseDto(cause.message ?: "invalid_social_token")
+            )
+        }
+
+        exception<SocialIdentityResolutionException> { call, cause ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ErrorResponseDto(cause.message ?: "social_identity_resolution_failed")
             )
         }
 
