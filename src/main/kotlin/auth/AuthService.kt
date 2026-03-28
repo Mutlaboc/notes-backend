@@ -96,6 +96,27 @@ class AuthService(
         )
     }
 
+    suspend fun issueSessionForUserId(userId: Uuid): AuthResponseDto {
+        val user = requireActiveUser(userId)
+        authRepository.updateLastLogin(user.id)
+        return buildAuthResponse(user)
+    }
+
+    private suspend fun requireActiveUser(userId: Uuid): AuthUserModel {
+        val user = authRepository.findById(userId)
+            ?: throw UnauthorizedAuthException()
+
+        if (!user.isActive) {
+            throw UnauthorizedAuthException()
+        }
+
+        if (user.email.isNullOrBlank()) {
+            throw UnauthorizedAuthException()
+        }
+
+        return user
+    }
+
     private suspend fun buildAuthResponse(user: AuthUserModel): AuthResponseDto {
         val email = user.email ?: error("User email is null")
         val refreshToken = issueRefreshToken(user.id)

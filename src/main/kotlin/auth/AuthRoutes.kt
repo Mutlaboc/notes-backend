@@ -16,7 +16,8 @@ import io.ktor.server.routing.route
 import kotlin.uuid.Uuid
 
 fun Route.authRoutes(
-    authService: AuthService
+    authService: AuthService,
+    socialAuthService: SocialAuthService
 ) {
     route("/auth") {
         post("/register") {
@@ -54,6 +55,34 @@ fun Route.authRoutes(
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "invalid_request")))
             } catch (e: UnauthorizedAuthException) {
                 call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "unauthorized"))
+            }
+        }
+
+        route("/social") {
+            post("/google") {
+                try {
+                    val request = call.receive<GoogleSocialLoginRequestDto>()
+                    val response = socialAuthService.loginWithGoogle(request)
+                    call.respond(HttpStatusCode.OK, response)
+                } catch (e: IllegalArgumentException) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponseDto(e.message ?: "invalid_request")
+                    )
+                }
+            }
+
+            post("/yandex") {
+                try {
+                    val request = call.receive<YandexSocialLoginRequestDto>()
+                    val response = socialAuthService.loginWithYandex(request)
+                    call.respond(HttpStatusCode.OK, response)
+                } catch (e: IllegalArgumentException) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        ErrorResponseDto(e.message ?: "invalid_request")
+                    )
+                }
             }
         }
 

@@ -3,12 +3,20 @@ package com.example.mutlabocnotes
 import com.example.mutlabocnotes.auth.AuthRepository
 import com.example.mutlabocnotes.auth.AuthService
 import com.example.mutlabocnotes.auth.BcryptPasswordHasher
+import com.example.mutlabocnotes.auth.ErrorResponseDto
 import com.example.mutlabocnotes.auth.JwtTokenService
+import com.example.mutlabocnotes.auth.NotReadyGoogleTokenVerifier
+import com.example.mutlabocnotes.auth.NotReadySocialUserResolver
+import com.example.mutlabocnotes.auth.NotReadyYandexTokenVerifier
 import com.example.mutlabocnotes.auth.RefreshTokenRepository
 import com.example.mutlabocnotes.auth.RefreshTokenService
+import com.example.mutlabocnotes.auth.SocialAuthNotReadyException
+import com.example.mutlabocnotes.auth.SocialAuthService
+import com.example.mutlabocnotes.auth.SocialTokenValidationException
 import com.example.mutlabocnotes.auth.authRoutes
 import com.example.mutlabocnotes.auth.configureJwtAuthentication
 import com.example.mutlabocnotes.auth.readJwtConfig
+import com.example.mutlabocnotes.auth.readSocialAuthConfig
 import com.example.mutlabocnotes.database.DatabaseFactory
 import com.example.mutlabocnotes.homecards.homeCardsRoutes
 import com.example.mutlabocnotes.notes.NotesRepository
@@ -39,17 +47,27 @@ fun Application.module() {
     val notesService = NotesService(notesRepository)
 
     val jwtConfig = environment.config.readJwtConfig()
+    val socialAuthConfig = environment.config.readSocialAuthConfig()
+
     val authRepository = AuthRepository()
     val refreshTokenRepository = RefreshTokenRepository()
     val passwordHasher = BcryptPasswordHasher(cost = 12)
     val jwtTokenService = JwtTokenService(jwtConfig)
     val refreshTokenService = RefreshTokenService(jwtConfig)
+
     val authService = AuthService(
         authRepository = authRepository,
         refreshTokenRepository = refreshTokenRepository,
         passwordHasher = passwordHasher,
         jwtTokenService = jwtTokenService,
         refreshTokenService = refreshTokenService
+    )
+
+    val socialAuthService = SocialAuthService(
+        authService = authService,
+        googleTokenVerifier = NotReadyGoogleTokenVerifier(socialAuthConfig),
+        yandexTokenVerifier = NotReadyYandexTokenVerifier(socialAuthConfig),
+        socialUserResolver = NotReadySocialUserResolver()
     )
 
     install(CallLogging)
@@ -68,6 +86,20 @@ fun Application.module() {
             call.respond(
                 HttpStatusCode.BadRequest,
                 mapOf("error" to (cause.message ?: "bad_request"))
+            )
+        }
+
+        exception<SocialTokenValidationException> { call, cause ->
+            call.respond(
+                HttpStatusCode.Unauthorized,
+                ErrorResponseDto(cause.message ?: "invalid_social_token")
+            )
+        }
+
+        exception<SocialAuthNotReadyException> { call, cause ->
+            call.respond(
+                HttpStatusCode.NotImplemented,
+                ErrorResponseDto(cause.message ?: "social_auth_not_ready")
             )
         }
 
@@ -110,7 +142,10 @@ fun Application.module() {
             )
         }
 
-        authRoutes(authService)
+        authRoutes(
+            authService = authService,
+            socialAuthService = socialAuthService
+        )
 
         notesRoutes(
             notesService = notesService,
