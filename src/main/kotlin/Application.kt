@@ -5,8 +5,8 @@ import com.example.mutlabocnotes.auth.AuthService
 import com.example.mutlabocnotes.auth.BcryptPasswordHasher
 import com.example.mutlabocnotes.auth.DatabaseSocialUserResolver
 import com.example.mutlabocnotes.auth.ErrorResponseDto
+import com.example.mutlabocnotes.auth.GoogleTokenVerifierImpl
 import com.example.mutlabocnotes.auth.JwtTokenService
-import com.example.mutlabocnotes.auth.NotReadyGoogleTokenVerifier
 import com.example.mutlabocnotes.auth.NotReadyYandexTokenVerifier
 import com.example.mutlabocnotes.auth.RefreshTokenRepository
 import com.example.mutlabocnotes.auth.RefreshTokenService
@@ -68,7 +68,7 @@ fun Application.module() {
 
     val socialAuthService = SocialAuthService(
         authService = authService,
-        googleTokenVerifier = NotReadyGoogleTokenVerifier(socialAuthConfig),
+        googleTokenVerifier = GoogleTokenVerifierImpl(socialAuthConfig),
         yandexTokenVerifier = NotReadyYandexTokenVerifier(socialAuthConfig),
         socialUserResolver = DatabaseSocialUserResolver(
             authRepository = authRepository,

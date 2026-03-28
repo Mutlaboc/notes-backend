@@ -42,6 +42,10 @@ dependencies {
     implementation("io.ktor:ktor-server-auth-jwt")
     implementation("com.auth0:java-jwt")
     implementation("org.mindrot:jbcrypt:0.4")
+
+    // Google ID token verification
+    implementation("com.google.api-client:google-api-client:2.7.0")
+    implementation("com.google.http-client:google-http-client-gson:1.46.3")
 }
 
 tasks.named<ShadowJar>("shadowJar") {
