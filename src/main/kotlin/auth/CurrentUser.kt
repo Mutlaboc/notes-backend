@@ -9,6 +9,7 @@ import io.ktor.server.auth.principal
 import io.ktor.server.response.respond
 import kotlin.uuid.Uuid
 
+// Реализует шаг «require current user id» в рамках текущего процесса.
 suspend fun ApplicationCall.requireCurrentUserId(): Uuid? {
     val principal = principal<JWTPrincipal>()
     val subject = principal?.payload?.subject

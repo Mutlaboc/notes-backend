@@ -6,6 +6,7 @@ import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.javatime.timestampWithTimeZone
 
+// Описание структуры таблицы базы данных через Exposed.
 object RefreshTokensTable : Table("refresh_tokens") {
     val id = uuid("id")
     val userId = uuid("user_id").references(UsersTable.id, onDelete = ReferenceOption.CASCADE)

@@ -2,6 +2,7 @@ package com.example.mutlabocnotes.auth
 
 import io.ktor.server.config.ApplicationConfig
 
+// Модель данных, используемая в бизнес-логике.
 data class JwtConfig(
     val issuer: String,
     val audience: String,
@@ -11,6 +12,7 @@ data class JwtConfig(
     val refreshTokenTtlSeconds: Long
 )
 
+// Реализует шаг «read jwt config» в рамках текущего процесса.
 fun ApplicationConfig.readJwtConfig(): JwtConfig {
     val config = config("jwt")
     val secret = config.property("secret").getString().trim()

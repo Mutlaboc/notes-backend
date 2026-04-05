@@ -5,6 +5,7 @@ package com.example.mutlabocnotes.auth
 import java.time.OffsetDateTime
 import kotlin.uuid.Uuid
 
+// Сервис с прикладной бизнес-логикой модуля.
 class AuthService(
     private val authRepository: AuthRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
@@ -13,6 +14,7 @@ class AuthService(
     private val refreshTokenService: RefreshTokenService
 ) {
 
+    // Регистрирует нового пользователя и возвращает авторизационную сессию.
     suspend fun register(request: RegisterRequestDto): AuthResponseDto {
         val email = normalizeEmail(request.email)
         validatePassword(request.password)
@@ -33,6 +35,7 @@ class AuthService(
         return buildAuthResponse(createdUser)
     }
 
+    // Проверяет учётные данные и возвращает авторизационную сессию.
     suspend fun login(request: LoginRequestDto): AuthResponseDto {
         val email = normalizeEmail(request.email)
         val user = authRepository.findByEmail(email)
@@ -53,14 +56,17 @@ class AuthService(
         return buildAuthResponse(user)
     }
 
+    // Переиздаёт access/refresh токены по валидному refresh-токену.
     suspend fun refresh(request: RefreshTokenRequestDto): AuthResponseDto {
         val rawRefreshToken = request.refreshToken.trim()
         require(rawRefreshToken.isNotEmpty()) { "Refresh token is required" }
 
+        // Ищем refresh-токен по хешу, чтобы не хранить «сырой» токен в БД.
         val tokenHash = refreshTokenService.hash(rawRefreshToken)
         val storedToken = refreshTokenRepository.findByTokenHash(tokenHash)
             ?: throw UnauthorizedAuthException()
 
+        // Проверяем, что токен ещё валиден и не был отозван ранее.
         if (storedToken.revokedAt != null || storedToken.expiresAt.isBefore(OffsetDateTime.now())) {
             throw UnauthorizedAuthException()
         }
@@ -72,12 +78,14 @@ class AuthService(
             throw UnauthorizedAuthException()
         }
 
+        // Делаем refresh-токен одноразовым: отзываем старый и выпускаем новую пару.
         refreshTokenRepository.revokeByTokenHash(tokenHash)
         authRepository.updateLastLogin(user.id)
 
         return buildAuthResponse(user)
     }
 
+    // Возвращает профиль текущего авторизованного пользователя.
     suspend fun me(userId: Uuid): AuthUserResponseDto {
         val user = authRepository.findById(userId)
             ?: throw UnauthorizedAuthException()
@@ -96,12 +104,14 @@ class AuthService(
         )
     }
 
+    // Выпускает новую сессию для пользователя после внешней аутентификации.
     suspend fun issueSessionForUserId(userId: Uuid): AuthResponseDto {
         val user = requireActiveUser(userId)
         authRepository.updateLastLogin(user.id)
         return buildAuthResponse(user)
     }
 
+    // Проверяет, что пользователь существует, активен и имеет email.
     private suspend fun requireActiveUser(userId: Uuid): AuthUserModel {
         val user = authRepository.findById(userId)
             ?: throw UnauthorizedAuthException()
@@ -117,10 +127,12 @@ class AuthService(
         return user
     }
 
+    // Формирует единый ответ авторизации с токенами и данными пользователя.
     private suspend fun buildAuthResponse(user: AuthUserModel): AuthResponseDto {
         val email = user.email ?: error("User email is null")
         val refreshToken = issueRefreshToken(user.id)
 
+        // Возвращаем токены и согласованный профиль пользователя в одном ответе.
         return AuthResponseDto(
             accessToken = jwtTokenService.generateAccessToken(user),
             refreshToken = refreshToken,
@@ -136,6 +148,7 @@ class AuthService(
         )
     }
 
+    // Создаёт и сохраняет новый refresh-токен в хранилище.
     private suspend fun issueRefreshToken(userId: Uuid): String {
         val rawToken = refreshTokenService.generateToken()
         val tokenHash = refreshTokenService.hash(rawToken)
@@ -149,6 +162,7 @@ class AuthService(
         return rawToken
     }
 
+    // Нормализует email и валидирует базовые ограничения формата.
     private fun normalizeEmail(email: String): String {
         val normalized = email.trim().lowercase()
 
@@ -160,6 +174,7 @@ class AuthService(
         return normalized
     }
 
+    // Очищает и валидирует отображаемое имя пользователя.
     private fun normalizeDisplayName(displayName: String?): String? {
         val normalized = displayName?.trim()?.takeIf { it.isNotEmpty() }
         require(normalized == null || normalized.length <= 120) {
@@ -168,6 +183,7 @@ class AuthService(
         return normalized
     }
 
+    // Проверяет длину пароля по правилам безопасности.
     private fun validatePassword(password: String) {
         require(password.length >= 8) {
             "Password must be at least 8 characters long"

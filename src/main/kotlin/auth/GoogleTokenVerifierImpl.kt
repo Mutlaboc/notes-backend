@@ -4,6 +4,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 
+// Класс с основной логикой данного модуля.
 class GoogleTokenVerifierImpl(
     private val config: SocialAuthConfig
 ) : GoogleTokenVerifier {
@@ -22,6 +23,7 @@ class GoogleTokenVerifierImpl(
             .build()
     }
 
+    // Проверяет корректность входных данных и условий доступа.
     override suspend fun verifyIdToken(idToken: String): VerifiedSocialIdentity {
         val token = verifier.verify(idToken)
             ?: throw SocialTokenValidationException("google_id_token_invalid")

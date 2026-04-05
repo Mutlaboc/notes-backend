@@ -16,6 +16,7 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import java.util.UUID
 
+// Реализует шаг «home cards routes» в рамках текущего процесса.
 fun Route.homeCardsRoutes(
     repository: HomeCardsRepository = HomeCardsRepository(),
 ) {

@@ -11,8 +11,10 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import kotlin.uuid.Uuid
 
+// Класс с основной логикой данного модуля.
 class FirebaseUserResolver {
 
+    // Возвращает данные по заданным параметрам запроса.
     suspend fun resolveUserId(call: ApplicationCall): Uuid {
         val firebaseUid = call.request.headers["X-Firebase-Uid"]
             ?.trim()

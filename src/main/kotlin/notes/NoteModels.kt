@@ -5,6 +5,7 @@ package com.example.mutlabocnotes.notes
 import kotlinx.serialization.Serializable
 import kotlin.uuid.Uuid
 
+// Перечисление допустимых значений для этой части системы.
 @Serializable
 enum class NoteCategory {
     SHOPPING,
@@ -12,11 +13,13 @@ enum class NoteCategory {
     NOTES
 }
 
+// Модель данных, используемая в бизнес-логике.
 data class ChecklistItemModel(
     val text: String,
     val isChecked: Boolean
 )
 
+// Модель данных, используемая в бизнес-логике.
 data class NoteModel(
     val id: Uuid,
     val userId: Uuid,

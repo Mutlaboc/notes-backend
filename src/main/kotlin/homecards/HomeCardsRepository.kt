@@ -11,8 +11,10 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 
+// Репозиторий для доступа к данным и работы с БД.
 class HomeCardsRepository {
 
+    // Возвращает все home-карточки пользователя с полями и ссылками.
     fun getAllForUser(userId: UUID): List<HomeCardDto> = transaction {
         HomeCardsTable
             .selectAll()
@@ -21,6 +23,7 @@ class HomeCardsRepository {
             .map { row ->
                 val cardId = row[HomeCardsTable.id]
 
+                // Подгружаем связанные поля карточки в стабильном порядке отображения.
                 val fields = HomeCardFieldsTable
                     .selectAll()
                     .where { HomeCardFieldsTable.cardId eq cardId }
@@ -32,6 +35,7 @@ class HomeCardsRepository {
                         )
                     }
 
+                // Подгружаем ссылки карточки отдельно, чтобы сохранить их сортировку.
                 val links = HomeCardLinksTable
                     .selectAll()
                     .where { HomeCardLinksTable.cardId eq cardId }
@@ -53,6 +57,7 @@ class HomeCardsRepository {
             }
     }
 
+    // Возвращает одну home-карточку с проверкой владельца.
     fun getByIdForUser(userId: UUID, cardId: String): HomeCardDto? = transaction {
         val uuid = runCatching { UUID.fromString(cardId) }.getOrNull() ?: return@transaction null
 
@@ -93,6 +98,7 @@ class HomeCardsRepository {
         )
     }
 
+    // Создаёт home-карточку и связанные записи полей/ссылок.
     fun createForUser(userId: UUID, request: HomeCardUpsertRequestDto): HomeCardDto = transaction {
         val cardId = UUID.randomUUID()
         val now = OffsetDateTime.now(ZoneOffset.UTC)
@@ -142,6 +148,7 @@ class HomeCardsRepository {
         )
     }
 
+    // Обновляет home-карточку и пересоздаёт дочерние записи.
     fun updateForUser(userId: UUID, cardId: String, request: HomeCardUpsertRequestDto): HomeCardDto? = transaction {
         val uuid = runCatching { UUID.fromString(cardId) }.getOrNull() ?: return@transaction null
 
@@ -154,6 +161,7 @@ class HomeCardsRepository {
         val updatedAtValue = if (request.updatedAt > 0) epochMillisToOffsetDateTime(request.updatedAt) else OffsetDateTime.now(ZoneOffset.UTC)
         val createdAtValue = if (request.createdAt > 0) epochMillisToOffsetDateTime(request.createdAt) else existing[HomeCardsTable.createdAt]
 
+        // Обновляем основную карточку и только после этого синхронизируем дочерние коллекции.
         HomeCardsTable.update({ (HomeCardsTable.id eq uuid) and (HomeCardsTable.userId eq userId) }) {
             it[HomeCardsTable.title] = request.title
             it[HomeCardsTable.section] = request.section
@@ -162,6 +170,7 @@ class HomeCardsRepository {
             it[HomeCardsTable.updatedAt] = updatedAtValue
         }
 
+        // Поля и ссылки пересоздаются целиком, чтобы не оставлять устаревшие записи.
         HomeCardFieldsTable.deleteWhere { HomeCardFieldsTable.cardId eq uuid }
         HomeCardLinksTable.deleteWhere { HomeCardLinksTable.cardId eq uuid }
 
@@ -200,6 +209,7 @@ class HomeCardsRepository {
         )
     }
 
+    // Удаляет home-карточку, если она принадлежит пользователю.
     fun deleteForUser(userId: UUID, cardId: String): Boolean = transaction {
         val uuid = runCatching { UUID.fromString(cardId) }.getOrNull() ?: return@transaction false
 
@@ -210,6 +220,7 @@ class HomeCardsRepository {
         deleted > 0
     }
 
+    // Преобразует utc-таймстамп в OffsetDateTime.
     private fun epochMillisToOffsetDateTime(value: Long): OffsetDateTime =
         OffsetDateTime.ofInstant(Instant.ofEpochMilli(value), ZoneOffset.UTC)
 }

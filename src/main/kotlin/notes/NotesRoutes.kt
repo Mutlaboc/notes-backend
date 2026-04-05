@@ -18,6 +18,7 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import kotlin.uuid.Uuid
 
+// Реализует шаг «notes routes» в рамках текущего процесса.
 fun Route.notesRoutes(
     notesService: NotesService,
 ) {
@@ -99,5 +100,6 @@ fun Route.notesRoutes(
     }
 }
 
+// Преобразует данные в нужный формат представления.
 private fun String.toUuidOrNull(): Uuid? =
     runCatching { Uuid.parse(this) }.getOrNull()

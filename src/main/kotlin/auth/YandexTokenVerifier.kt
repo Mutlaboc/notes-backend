@@ -8,10 +8,13 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
+// Компонент для проверки внешних токенов и данных.
 interface YandexTokenVerifier {
+    // Проверяет корректность входных данных и условий доступа.
     suspend fun verifyAccessToken(accessToken: String): VerifiedSocialIdentity
 }
 
+// Компонент для проверки внешних токенов и данных.
 class NotReadyYandexTokenVerifier(
     private val config: SocialAuthConfig
 ) : YandexTokenVerifier {
@@ -25,6 +28,7 @@ class NotReadyYandexTokenVerifier(
         isLenient = true
     }
 
+    // Проверяет корректность входных данных и условий доступа.
     override suspend fun verifyAccessToken(accessToken: String): VerifiedSocialIdentity {
         val expectedClientId = config.yandexClientId?.takeIf { it.isNotBlank() }
             ?: throw SocialAuthNotReadyException("yandex_auth_not_configured")
@@ -95,6 +99,7 @@ class NotReadyYandexTokenVerifier(
     }
 }
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 private data class YandexUserInfoResponseDto(
     val id: String? = null,

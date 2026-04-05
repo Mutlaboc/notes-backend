@@ -15,6 +15,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import kotlin.uuid.Uuid
 
+// Реализует шаг «auth routes» в рамках текущего процесса.
 fun Route.authRoutes(
     authService: AuthService,
     socialAuthService: SocialAuthService
@@ -106,5 +107,6 @@ fun Route.authRoutes(
     }
 }
 
+// Реализует шаг «subject as uuid» в рамках текущего процесса.
 private fun JWTPrincipal.subjectAsUuid(): Uuid? =
     runCatching { Uuid.parse(payload.subject) }.getOrNull()

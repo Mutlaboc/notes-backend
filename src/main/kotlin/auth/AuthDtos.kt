@@ -2,6 +2,7 @@ package com.example.mutlabocnotes.auth
 
 import kotlinx.serialization.Serializable
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class RegisterRequestDto(
     val email: String,
@@ -9,17 +10,20 @@ data class RegisterRequestDto(
     val displayName: String? = null
 )
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class LoginRequestDto(
     val email: String,
     val password: String
 )
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class RefreshTokenRequestDto(
     val refreshToken: String
 )
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class AuthUserResponseDto(
     val id: String,
@@ -28,6 +32,7 @@ data class AuthUserResponseDto(
     val bridgeUserKey: String? = null
 )
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class AuthResponseDto(
     val accessToken: String,

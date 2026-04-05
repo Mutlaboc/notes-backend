@@ -14,6 +14,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import kotlin.uuid.Uuid
 
+// Модель данных, используемая в бизнес-логике.
 data class UserIdentityModel(
     val id: Uuid,
     val userId: Uuid,
@@ -29,8 +30,10 @@ data class UserIdentityModel(
     val lastLoginAt: java.time.OffsetDateTime?
 )
 
+// Репозиторий для доступа к данным и работы с БД.
 class UserIdentityRepository {
 
+    // Возвращает данные по заданным параметрам запроса.
     suspend fun findByProviderAndProviderUserId(
         provider: SocialProvider,
         providerUserId: String
@@ -46,6 +49,7 @@ class UserIdentityRepository {
                 ?.toUserIdentityModel()
         }
 
+    // Создаёт новую заметку и связанный чеклист.
     suspend fun create(
         userId: Uuid,
         identity: VerifiedSocialIdentity,
@@ -74,6 +78,7 @@ class UserIdentityRepository {
         return findById(identityId) ?: error("Created user identity not found")
     }
 
+    // Преобразует данные в нужный формат представления.
     suspend fun touchLogin(
         identityId: Uuid,
         identity: VerifiedSocialIdentity,
@@ -99,6 +104,7 @@ class UserIdentityRepository {
         }
     }
 
+    // Возвращает данные по заданным параметрам запроса.
     private suspend fun findById(identityId: Uuid): UserIdentityModel? =
         DatabaseFactory.dbQuery {
             UserIdentitiesTable
@@ -108,6 +114,7 @@ class UserIdentityRepository {
                 ?.toUserIdentityModel()
         }
 
+    // Преобразует данные в нужный формат представления.
     private fun ResultRow.toUserIdentityModel(): UserIdentityModel =
         UserIdentityModel(
             id = this[UserIdentitiesTable.id],

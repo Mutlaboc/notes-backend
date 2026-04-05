@@ -3,8 +3,10 @@ package com.example.mutlabocnotes
 import io.ktor.server.config.ApplicationConfig
 import org.flywaydb.core.Flyway
 
+// Запускает инфраструктурный процесс при старте приложения.
 object FlywayRunner {
 
+    // Реализует шаг «migrate» в рамках текущего процесса.
     fun migrate(config: ApplicationConfig) {
         val enabled = config.propertyOrNull("flyway.enabled")
             ?.getString()
@@ -39,6 +41,7 @@ object FlywayRunner {
             .migrate()
     }
 
+    // Реализует шаг «property or null» в рамках текущего процесса.
     private fun ApplicationConfig.propertyOrNull(path: String) =
         try {
             property(path)

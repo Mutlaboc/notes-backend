@@ -37,11 +37,14 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 
+// Запускает серверное приложение.
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
+// Собирает инфраструктуру приложения: плагины, базу данных и роуты.
 fun Application.module() {
     val appLog = environment.log
 
+    // Сначала применяем миграции, затем инициализируем подключение к БД.
     FlywayRunner.migrate(environment.config)
     DatabaseFactory.init(environment.config)
 
@@ -58,6 +61,7 @@ fun Application.module() {
     val jwtTokenService = JwtTokenService(jwtConfig)
     val refreshTokenService = RefreshTokenService(jwtConfig)
 
+    // Явно собираем зависимости авторизации, чтобы упростить поддержку и дебаг.
     val authService = AuthService(
         authRepository = authRepository,
         refreshTokenRepository = refreshTokenRepository,
@@ -66,6 +70,7 @@ fun Application.module() {
         refreshTokenService = refreshTokenService
     )
 
+    // Подключаем социальную аутентификацию с резолвером связки identity -> user.
     val socialAuthService = SocialAuthService(
         authService = authService,
         googleTokenVerifier = GoogleTokenVerifierImpl(socialAuthConfig),
@@ -87,6 +92,7 @@ fun Application.module() {
         jwtTokenService = jwtTokenService
     )
 
+    // Централизованная обработка ошибок для единообразных ответов API.
     install(StatusPages) {
         exception<BadRequestException> { call, cause ->
             call.respond(
@@ -126,6 +132,7 @@ fun Application.module() {
     }
 
     routing {
+        // Технические эндпоинты для проверки доступности сервиса и базы.
         get("/") {
             call.respond(
                 HttpStatusCode.OK,

@@ -11,6 +11,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.slf4j.event.*
 
+// Настраивает выбранную подсистему приложения.
 fun Application.configureSerialization() {
     install(ContentNegotiation) {
         json()

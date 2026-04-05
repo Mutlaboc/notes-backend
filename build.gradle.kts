@@ -1,23 +1,28 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.file.DuplicatesStrategy
 
+// Подключаем плагины Kotlin, Ktor и сериализации для backend-модуля.
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlin.plugin.serialization)
 }
 
+// Базовые координаты артефакта приложения.
 group = "com.example.mutlabocnotes"
 version = "0.0.1"
 
+// Указываем главный класс для запуска сервера через Gradle.
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
 }
 
+// Фиксируем целевую версию JVM для компиляции backend-кода.
 kotlin {
     jvmToolchain(21)
 }
 
+// Зависимости серверного слоя, БД, миграций и тестов.
 dependencies {
     implementation(libs.ktor.server.call.logging)
     implementation(libs.ktor.server.core)
@@ -43,11 +48,12 @@ dependencies {
     implementation("com.auth0:java-jwt")
     implementation("org.mindrot:jbcrypt:0.4")
 
-    // Google ID token verification
+    // Библиотеки для проверки Google ID-токена.
     implementation("com.google.api-client:google-api-client:2.7.0")
     implementation("com.google.http-client:google-http-client-gson:1.46.3")
 }
 
+// Настройки fat-jar сборки для деплоя backend-приложения.
 tasks.named<ShadowJar>("shadowJar") {
     archiveFileName.set("notes-backend-all.jar")
     mergeServiceFiles()

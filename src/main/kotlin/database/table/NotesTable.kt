@@ -5,6 +5,7 @@ package com.example.mutlabocnotes.database.table
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.javatime.timestampWithTimeZone
 
+// Описание структуры таблицы базы данных через Exposed.
 object NotesTable : Table("notes") {
     val id = uuid("id")
     val userId = uuid("user_id")

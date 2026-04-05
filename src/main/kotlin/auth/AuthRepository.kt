@@ -13,8 +13,10 @@ import java.time.Instant
 import java.time.ZoneOffset
 import kotlin.uuid.Uuid
 
+// Репозиторий для доступа к данным и работы с БД.
 class AuthRepository {
 
+    // Возвращает данные по заданным параметрам запроса.
     suspend fun findById(userId: Uuid): AuthUserModel? =
         DatabaseFactory.dbQuery {
             UsersTable
@@ -24,6 +26,7 @@ class AuthRepository {
                 ?.toAuthUser()
         }
 
+    // Возвращает данные по заданным параметрам запроса.
     suspend fun findByEmail(email: String): AuthUserModel? =
         DatabaseFactory.dbQuery {
             UsersTable
@@ -33,6 +36,7 @@ class AuthRepository {
                 ?.toAuthUser()
         }
 
+    // Создаёт новую запись и сохраняет её в хранилище.
     suspend fun createLocalUser(
         email: String,
         passwordHash: String,
@@ -44,6 +48,7 @@ class AuthRepository {
             displayName = displayName
         )
 
+    // Создаёт новую запись и сохраняет её в хранилище.
     suspend fun createSocialUser(
         email: String,
         displayName: String?
@@ -54,6 +59,7 @@ class AuthRepository {
             displayName = displayName
         )
 
+    // Создаёт новую запись и сохраняет её в хранилище.
     private suspend fun createUser(
         email: String,
         passwordHash: String?,
@@ -80,6 +86,7 @@ class AuthRepository {
         return findById(userId) ?: error("Created user not found")
     }
 
+    // Обновляет существующую запись в хранилище.
     suspend fun updateLastLogin(userId: Uuid) {
         DatabaseFactory.dbQuery {
             UsersTable.update(
@@ -90,6 +97,7 @@ class AuthRepository {
         }
     }
 
+    // Преобразует данные в нужный формат представления.
     private fun ResultRow.toAuthUser(): AuthUserModel =
         AuthUserModel(
             id = this[UsersTable.id],
@@ -100,5 +108,6 @@ class AuthRepository {
             isActive = this[UsersTable.isActive]
         )
 
+    // Реализует шаг «build bridge user key» в рамках текущего процесса.
     private fun buildBridgeUserKey(userId: Uuid): String = "local:${userId}"
 }

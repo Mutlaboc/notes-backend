@@ -18,8 +18,10 @@ import java.time.Instant
 import java.time.ZoneOffset
 import kotlin.uuid.Uuid
 
+// Репозиторий для доступа к данным и работы с БД.
 class NotesRepository {
 
+    // Возвращает все заметки пользователя вместе с чеклистами.
     suspend fun getAllByUser(userId: Uuid): List<NoteModel> =
         DatabaseFactory.dbQuery {
             val noteRows = NotesTable
@@ -30,6 +32,7 @@ class NotesRepository {
 
             val noteIds = noteRows.map { it[NotesTable.id] }
 
+            // Загружаем чеклист одной пачкой и группируем по noteId, чтобы не делать N+1 запросов.
             val checklistByNoteId = if (noteIds.isEmpty()) {
                 emptyMap()
             } else {
@@ -55,6 +58,7 @@ class NotesRepository {
             }
         }
 
+    // Возвращает одну заметку по id с проверкой владельца.
     suspend fun getById(userId: Uuid, noteId: Uuid): NoteModel? =
         DatabaseFactory.dbQuery {
             val noteRow = NotesTable
@@ -78,6 +82,7 @@ class NotesRepository {
             noteRow.toNoteModel(checklist)
         }
 
+    // Создаёт новую заметку и связанный чеклист.
     suspend fun create(userId: Uuid, request: CreateNoteRequestDto): NoteModel {
         val noteId = Uuid.random()
 
@@ -100,8 +105,10 @@ class NotesRepository {
         return getById(userId, noteId)!!
     }
 
+    // Обновляет заметку и перезаписывает её чеклист.
     suspend fun update(userId: Uuid, noteId: Uuid, request: UpdateNoteRequestDto): NoteModel? {
         val updated = DatabaseFactory.dbQuery {
+            // Сначала обновляем базовые поля заметки.
             val updatedRows = NotesTable.update(
                 where = { (NotesTable.id eq noteId) and (NotesTable.userId eq userId) }
             ) {
@@ -117,6 +124,7 @@ class NotesRepository {
             if (updatedRows == 0) {
                 false
             } else {
+                // Затем пересоздаём чеклист целиком, чтобы порядок и состав точно совпадали с запросом.
                 NoteChecklistItemsTable.deleteWhere { NoteChecklistItemsTable.noteId eq noteId }
                 insertChecklist(noteId, normalizedChecklist(request.category, request.checklist))
                 true
@@ -126,6 +134,7 @@ class NotesRepository {
         return if (updated) getById(userId, noteId) else null
     }
 
+    // Удаляет заметку, если она принадлежит текущему пользователю.
     suspend fun delete(userId: Uuid, noteId: Uuid): Boolean =
         DatabaseFactory.dbQuery {
             NotesTable.deleteWhere {
@@ -133,6 +142,7 @@ class NotesRepository {
             } > 0
         }
 
+    // Обновляет статус выполнения заметки.
     suspend fun updateCompletion(userId: Uuid, noteId: Uuid, isCompleted: Boolean): NoteModel? {
         val updated = DatabaseFactory.dbQuery {
             NotesTable.update(
@@ -145,6 +155,7 @@ class NotesRepository {
         return if (updated) getById(userId, noteId) else null
     }
 
+    // Сохраняет позиции чеклиста для конкретной заметки.
     private fun insertChecklist(noteId: Uuid, checklist: List<ChecklistItemDto>) {
         checklist.forEachIndexed { index, item ->
             NoteChecklistItemsTable.insert {
@@ -157,6 +168,7 @@ class NotesRepository {
         }
     }
 
+    // Нормализует чеклист и обнуляет его для неподдерживаемых категорий.
     private fun normalizedChecklist(
         category: NoteCategory,
         checklist: List<ChecklistItemDto>
@@ -167,12 +179,15 @@ class NotesRepository {
             emptyList()
         }
 
+    // Приводит текстовое поле к правилам выбранной категории.
     private fun normalizedContent(category: NoteCategory, content: String): String =
         if (category == NoteCategory.SHOPPING) "" else content
 
+    // Выдаёт признак повторения только для задач.
     private fun normalizedIsRepeating(category: NoteCategory, isRepeating: Boolean): Boolean =
         category == NoteCategory.TASKS && isRepeating
 
+    // Преобразует данные в нужный формат представления.
     private fun ResultRow.toNoteModel(checklist: List<ChecklistItemModel>): NoteModel =
         NoteModel(
             id = this[NotesTable.id],
@@ -187,6 +202,7 @@ class NotesRepository {
             isCompleted = this[NotesTable.isCompleted]
         )
 
+    // Преобразует данные в нужный формат представления.
     private fun Long.toOffsetDateTimeUtc() =
         Instant.ofEpochMilli(this).atOffset(ZoneOffset.UTC)
 }

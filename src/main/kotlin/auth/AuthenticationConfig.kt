@@ -5,6 +5,7 @@ import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.jwt.jwt
 
+// Настраивает выбранную подсистему приложения.
 fun Application.configureJwtAuthentication(
     jwtConfig: JwtConfig,
     jwtTokenService: JwtTokenService

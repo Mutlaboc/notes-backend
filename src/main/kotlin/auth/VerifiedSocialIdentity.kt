@@ -1,5 +1,6 @@
 package com.example.mutlabocnotes.auth
 
+// Модель данных, используемая в бизнес-логике.
 data class VerifiedSocialIdentity(
     val provider: SocialProvider,
     val providerUserId: String,

@@ -4,6 +4,7 @@ import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.javatime.timestampWithTimeZone
 import org.jetbrains.exposed.v1.core.java.javaUUID
 
+// Описание структуры таблицы базы данных через Exposed.
 object HomeCardsTable : Table("home_cards") {
     val id = javaUUID("id")
     val userId = javaUUID("user_id")
@@ -17,6 +18,7 @@ object HomeCardsTable : Table("home_cards") {
     override val primaryKey = PrimaryKey(id)
 }
 
+// Описание структуры таблицы базы данных через Exposed.
 object HomeCardFieldsTable : Table("home_card_fields") {
     val id = javaUUID("id")
     val cardId = javaUUID("card_id")
@@ -28,6 +30,7 @@ object HomeCardFieldsTable : Table("home_card_fields") {
     override val primaryKey = PrimaryKey(id)
 }
 
+// Описание структуры таблицы базы данных через Exposed.
 object HomeCardLinksTable : Table("home_card_links") {
     val id = javaUUID("id")
     val cardId = javaUUID("card_id")
@@ -38,6 +41,7 @@ object HomeCardLinksTable : Table("home_card_links") {
     override val primaryKey = PrimaryKey(id)
 }
 
+// Описание структуры таблицы базы данных через Exposed.
 object HomeCardsUsersLookupTable : Table("users") {
     val id = javaUUID("id")
     val firebaseUid = text("firebase_uid").nullable()

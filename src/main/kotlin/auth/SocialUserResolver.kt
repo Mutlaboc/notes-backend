@@ -4,15 +4,19 @@ package com.example.mutlabocnotes.auth
 
 import kotlin.uuid.Uuid
 
+// Интерфейс контракта для этой части системы.
 interface SocialUserResolver {
+    // Возвращает данные по заданным параметрам запроса.
     suspend fun resolveOrCreateUserId(identity: VerifiedSocialIdentity): Uuid
 }
 
+// Класс с основной логикой данного модуля.
 class DatabaseSocialUserResolver(
     private val authRepository: AuthRepository,
     private val userIdentityRepository: UserIdentityRepository
 ) : SocialUserResolver {
 
+    // Возвращает данные по заданным параметрам запроса.
     override suspend fun resolveOrCreateUserId(identity: VerifiedSocialIdentity): Uuid {
         val normalizedIdentity = identity.copy(
             displayName = normalizeDisplayName(identity.displayName)
@@ -56,6 +60,7 @@ class DatabaseSocialUserResolver(
         return userId
     }
 
+    // Реализует шаг «require verified email» в рамках текущего процесса.
     private fun requireVerifiedEmail(identity: VerifiedSocialIdentity): String {
         val verifiedEmail = normalizeVerifiedEmailOrNull(identity)
         if (verifiedEmail != null) return verifiedEmail
@@ -72,6 +77,7 @@ class DatabaseSocialUserResolver(
         throw SocialIdentityResolutionException("social_email_invalid")
     }
 
+    // Реализует шаг «normalize verified email or null» в рамках текущего процесса.
     private fun normalizeVerifiedEmailOrNull(identity: VerifiedSocialIdentity): String? {
         val email = identity.email
             ?.trim()
@@ -98,6 +104,7 @@ class DatabaseSocialUserResolver(
         return email
     }
 
+    // Очищает и валидирует отображаемое имя пользователя.
     private fun normalizeDisplayName(displayName: String?): String? {
         val normalized = displayName?.trim()?.takeIf { it.isNotEmpty() }
         return normalized?.take(120)

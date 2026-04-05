@@ -9,12 +9,14 @@ import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
 
+// Синглтон с общими функциями и константами модуля.
 object DatabaseFactory {
 
     private val logger = LoggerFactory.getLogger(DatabaseFactory::class.java)
 
     private lateinit var database: Database
 
+    // Реализует шаг «init» в рамках текущего процесса.
     fun init(config: ApplicationConfig) {
         val hikariConfig = HikariConfig().apply {
             driverClassName = config.property("db.driverClassName").getString()
@@ -53,6 +55,7 @@ object DatabaseFactory {
         logger.info("Database connection initialized successfully")
     }
 
+    // Реализует шаг «test connection» в рамках текущего процесса.
     fun testConnection(): String {
         check(::database.isInitialized) {
             "DatabaseFactory is not initialized"
@@ -68,6 +71,7 @@ object DatabaseFactory {
         }
     }
 
+    // Реализует шаг «db query» в рамках текущего процесса.
     suspend fun <T> dbQuery(block: () -> T): T =
         withContext(Dispatchers.IO) {
             transaction(database) {

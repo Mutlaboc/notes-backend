@@ -4,12 +4,14 @@ package com.example.mutlabocnotes.homecards
 
 import kotlinx.serialization.Serializable
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class HomeFieldDto(
     val key: String,
     val value: String,
 )
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class HomeCardDto(
     val id: String,
@@ -22,6 +24,7 @@ data class HomeCardDto(
     val updatedAt: Long,
 )
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class HomeCardUpsertRequestDto(
     val title: String,

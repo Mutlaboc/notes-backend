@@ -13,6 +13,7 @@ import org.jetbrains.exposed.v1.jdbc.update
 import java.time.OffsetDateTime
 import kotlin.uuid.Uuid
 
+// Модель данных, используемая в бизнес-логике.
 data class RefreshTokenModel(
     val id: Uuid,
     val userId: Uuid,
@@ -22,8 +23,10 @@ data class RefreshTokenModel(
     val revokedAt: OffsetDateTime?
 )
 
+// Репозиторий для доступа к данным и работы с БД.
 class RefreshTokenRepository {
 
+    // Создаёт новую заметку и связанный чеклист.
     suspend fun create(
         userId: Uuid,
         tokenHash: String,
@@ -51,6 +54,7 @@ class RefreshTokenRepository {
         )
     }
 
+    // Возвращает данные по заданным параметрам запроса.
     suspend fun findByTokenHash(tokenHash: String): RefreshTokenModel? =
         DatabaseFactory.dbQuery {
             RefreshTokensTable
@@ -60,6 +64,7 @@ class RefreshTokenRepository {
                 ?.toRefreshTokenModel()
         }
 
+    // Удаляет или отзывает данные в рамках текущего сценария.
     suspend fun revokeByTokenHash(tokenHash: String) {
         DatabaseFactory.dbQuery {
             RefreshTokensTable.update(
@@ -73,6 +78,7 @@ class RefreshTokenRepository {
         }
     }
 
+    // Удаляет или отзывает данные в рамках текущего сценария.
     suspend fun revokeAllByUserId(userId: Uuid) {
         DatabaseFactory.dbQuery {
             RefreshTokensTable.update(
@@ -86,6 +92,7 @@ class RefreshTokenRepository {
         }
     }
 
+    // Преобразует данные в нужный формат представления.
     private fun ResultRow.toRefreshTokenModel(): RefreshTokenModel =
         RefreshTokenModel(
             id = this[RefreshTokensTable.id],

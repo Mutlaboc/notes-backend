@@ -2,12 +2,14 @@ package com.example.mutlabocnotes.notes
 
 import kotlinx.serialization.Serializable
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class ChecklistItemDto(
     val text: String = "",
     val isChecked: Boolean = false
 )
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class NoteResponseDto(
     val id: String,
@@ -21,6 +23,7 @@ data class NoteResponseDto(
     val isCompleted: Boolean = false
 )
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class CreateNoteRequestDto(
     val title: String = "",
@@ -33,6 +36,7 @@ data class CreateNoteRequestDto(
     val isCompleted: Boolean = false
 )
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class UpdateNoteRequestDto(
     val title: String = "",
@@ -45,6 +49,7 @@ data class UpdateNoteRequestDto(
     val isCompleted: Boolean = false
 )
 
+// DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class UpdateNoteCompletionRequestDto(
     val isCompleted: Boolean

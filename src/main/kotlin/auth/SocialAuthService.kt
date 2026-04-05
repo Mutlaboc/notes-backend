@@ -2,6 +2,7 @@ package com.example.mutlabocnotes.auth
 
 @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
 
+// Сервис с прикладной бизнес-логикой модуля.
 class SocialAuthService(
     private val authService: AuthService,
     private val googleTokenVerifier: GoogleTokenVerifier,
@@ -9,6 +10,7 @@ class SocialAuthService(
     private val socialUserResolver: SocialUserResolver
 ) {
 
+    // Реализует шаг «login with google» в рамках текущего процесса.
     suspend fun loginWithGoogle(request: GoogleSocialLoginRequestDto): AuthResponseDto {
         val idToken = request.idToken.trim()
         require(idToken.isNotEmpty()) { "Google idToken is required" }
@@ -23,6 +25,7 @@ class SocialAuthService(
         return authService.issueSessionForUserId(userId)
     }
 
+    // Реализует шаг «login with yandex» в рамках текущего процесса.
     suspend fun loginWithYandex(request: YandexSocialLoginRequestDto): AuthResponseDto {
         val accessToken = request.accessToken.trim()
         require(accessToken.isNotEmpty()) { "Yandex accessToken is required" }
@@ -37,6 +40,7 @@ class SocialAuthService(
         return authService.issueSessionForUserId(userId)
     }
 
+    // Проверяет корректность входных данных и условий доступа.
     private fun validateVerifiedIdentity(
         identity: VerifiedSocialIdentity,
         expectedProvider: SocialProvider
