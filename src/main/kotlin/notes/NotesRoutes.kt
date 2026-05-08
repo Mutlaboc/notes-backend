@@ -2,11 +2,12 @@
 
 package com.example.mutlabocnotes.notes
 
+import com.example.mutlabocnotes.api.ApiErrorCodes
+import com.example.mutlabocnotes.api.respondApiError
 import com.example.mutlabocnotes.auth.requireCurrentUserId
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
-import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -33,13 +34,10 @@ fun Route.notesRoutes(
             get("/{id}") {
                 val userId = call.requireCurrentUserId() ?: return@get
                 val noteId = call.parameters["id"]?.toUuidOrNull()
-                    ?: throw BadRequestException("Invalid note id")
+                    ?: return@get call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_NOTE_ID)
 
                 val note = notesService.getById(userId, noteId)
-                    ?: return@get call.respond(
-                        HttpStatusCode.NotFound,
-                        mapOf("error" to "note_not_found")
-                    )
+                    ?: return@get call.respondApiError(HttpStatusCode.NotFound, ApiErrorCodes.NOTE_NOT_FOUND)
 
                 call.respond(HttpStatusCode.OK, note)
             }
@@ -54,14 +52,11 @@ fun Route.notesRoutes(
             put("/{id}") {
                 val userId = call.requireCurrentUserId() ?: return@put
                 val noteId = call.parameters["id"]?.toUuidOrNull()
-                    ?: throw BadRequestException("Invalid note id")
+                    ?: return@put call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_NOTE_ID)
                 val request = call.receive<UpdateNoteRequestDto>()
 
                 val updated = notesService.update(userId, noteId, request)
-                    ?: return@put call.respond(
-                        HttpStatusCode.NotFound,
-                        mapOf("error" to "note_not_found")
-                    )
+                    ?: return@put call.respondApiError(HttpStatusCode.NotFound, ApiErrorCodes.NOTE_NOT_FOUND)
 
                 call.respond(HttpStatusCode.OK, updated)
             }
@@ -69,14 +64,11 @@ fun Route.notesRoutes(
             delete("/{id}") {
                 val userId = call.requireCurrentUserId() ?: return@delete
                 val noteId = call.parameters["id"]?.toUuidOrNull()
-                    ?: throw BadRequestException("Invalid note id")
+                    ?: return@delete call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_NOTE_ID)
 
                 val deleted = notesService.delete(userId, noteId)
                 if (!deleted) {
-                    return@delete call.respond(
-                        HttpStatusCode.NotFound,
-                        mapOf("error" to "note_not_found")
-                    )
+                    return@delete call.respondApiError(HttpStatusCode.NotFound, ApiErrorCodes.NOTE_NOT_FOUND)
                 }
 
                 call.respond(HttpStatusCode.NoContent)
@@ -85,14 +77,11 @@ fun Route.notesRoutes(
             patch("/{id}/completion") {
                 val userId = call.requireCurrentUserId() ?: return@patch
                 val noteId = call.parameters["id"]?.toUuidOrNull()
-                    ?: throw BadRequestException("Invalid note id")
+                    ?: return@patch call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_NOTE_ID)
                 val request = call.receive<UpdateNoteCompletionRequestDto>()
 
                 val updated = notesService.updateCompletion(userId, noteId, request.isCompleted)
-                    ?: return@patch call.respond(
-                        HttpStatusCode.NotFound,
-                        mapOf("error" to "note_not_found")
-                    )
+                    ?: return@patch call.respondApiError(HttpStatusCode.NotFound, ApiErrorCodes.NOTE_NOT_FOUND)
 
                 call.respond(HttpStatusCode.OK, updated)
             }

@@ -15,7 +15,3 @@ data class YandexSocialLoginRequestDto(
 )
 
 // DTO-модель для обмена данными между API и доменом.
-@Serializable
-data class ErrorResponseDto(
-    val error: String
-)

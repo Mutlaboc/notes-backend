@@ -2,6 +2,8 @@
 
 package com.example.mutlabocnotes.auth
 
+import com.example.mutlabocnotes.api.ApiErrorCodes
+import com.example.mutlabocnotes.api.respondApiError
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
@@ -27,9 +29,9 @@ fun Route.authRoutes(
                 val response = authService.register(request)
                 call.respond(HttpStatusCode.Created, response)
             } catch (e: IllegalArgumentException) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "invalid_request")))
+                call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST, e.message)
             } catch (e: EmailAlreadyRegisteredException) {
-                call.respond(HttpStatusCode.Conflict, mapOf("error" to "email_already_registered"))
+                call.respondApiError(HttpStatusCode.Conflict, ApiErrorCodes.EMAIL_ALREADY_REGISTERED)
             }
         }
 
@@ -39,11 +41,11 @@ fun Route.authRoutes(
                 val response = authService.login(request)
                 call.respond(HttpStatusCode.OK, response)
             } catch (e: IllegalArgumentException) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "invalid_request")))
+                call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST, e.message)
             } catch (e: InvalidCredentialsException) {
-                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "invalid_email_or_password"))
+                call.respondApiError(HttpStatusCode.Unauthorized, ApiErrorCodes.INVALID_EMAIL_OR_PASSWORD)
             } catch (e: InactiveUserException) {
-                call.respond(HttpStatusCode.Forbidden, mapOf("error" to "user_inactive"))
+                call.respondApiError(HttpStatusCode.Forbidden, ApiErrorCodes.USER_INACTIVE)
             }
         }
 
@@ -53,9 +55,9 @@ fun Route.authRoutes(
                 val response = authService.refresh(request)
                 call.respond(HttpStatusCode.OK, response)
             } catch (e: IllegalArgumentException) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "invalid_request")))
+                call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST, e.message)
             } catch (e: UnauthorizedAuthException) {
-                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "unauthorized"))
+                call.respondApiError(HttpStatusCode.Unauthorized, ApiErrorCodes.UNAUTHORIZED)
             }
         }
 
@@ -66,10 +68,7 @@ fun Route.authRoutes(
                     val response = socialAuthService.loginWithGoogle(request)
                     call.respond(HttpStatusCode.OK, response)
                 } catch (e: IllegalArgumentException) {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        ErrorResponseDto(e.message ?: "invalid_request")
-                    )
+                    call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST, e.message)
                 }
             }
 
@@ -79,10 +78,7 @@ fun Route.authRoutes(
                     val response = socialAuthService.loginWithYandex(request)
                     call.respond(HttpStatusCode.OK, response)
                 } catch (e: IllegalArgumentException) {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        ErrorResponseDto(e.message ?: "invalid_request")
-                    )
+                    call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST, e.message)
                 }
             }
         }
@@ -91,16 +87,13 @@ fun Route.authRoutes(
             get("/me") {
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal?.subjectAsUuid()
-                    ?: return@get call.respond(
-                        HttpStatusCode.Unauthorized,
-                        mapOf("error" to "unauthorized")
-                    )
+                    ?: return@get call.respondApiError(HttpStatusCode.Unauthorized, ApiErrorCodes.UNAUTHORIZED)
 
                 try {
                     val response = authService.me(userId)
                     call.respond(HttpStatusCode.OK, response)
                 } catch (e: UnauthorizedAuthException) {
-                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "unauthorized"))
+                    call.respondApiError(HttpStatusCode.Unauthorized, ApiErrorCodes.UNAUTHORIZED)
                 }
             }
         }

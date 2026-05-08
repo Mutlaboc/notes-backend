@@ -12,10 +12,10 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 
 // Репозиторий для доступа к данным и работы с БД.
-class HomeCardsRepository {
+open class HomeCardsRepository {
 
     // Возвращает все home-карточки пользователя с полями и ссылками.
-    fun getAllForUser(userId: UUID): List<HomeCardDto> = transaction {
+    open fun getAllForUser(userId: UUID): List<HomeCardDto> = transaction {
         HomeCardsTable
             .selectAll()
             .where { HomeCardsTable.userId eq userId }
@@ -58,7 +58,7 @@ class HomeCardsRepository {
     }
 
     // Возвращает одну home-карточку с проверкой владельца.
-    fun getByIdForUser(userId: UUID, cardId: String): HomeCardDto? = transaction {
+    open fun getByIdForUser(userId: UUID, cardId: String): HomeCardDto? = transaction {
         val uuid = runCatching { UUID.fromString(cardId) }.getOrNull() ?: return@transaction null
 
         val row = HomeCardsTable
@@ -99,7 +99,7 @@ class HomeCardsRepository {
     }
 
     // Создаёт home-карточку и связанные записи полей/ссылок.
-    fun createForUser(userId: UUID, request: HomeCardUpsertRequestDto): HomeCardDto = transaction {
+    open fun createForUser(userId: UUID, request: HomeCardUpsertRequestDto): HomeCardDto = transaction {
         val cardId = UUID.randomUUID()
         val now = OffsetDateTime.now(ZoneOffset.UTC)
         val createdAtValue = if (request.createdAt > 0) epochMillisToOffsetDateTime(request.createdAt) else now
@@ -149,7 +149,7 @@ class HomeCardsRepository {
     }
 
     // Обновляет home-карточку и пересоздаёт дочерние записи.
-    fun updateForUser(userId: UUID, cardId: String, request: HomeCardUpsertRequestDto): HomeCardDto? = transaction {
+    open fun updateForUser(userId: UUID, cardId: String, request: HomeCardUpsertRequestDto): HomeCardDto? = transaction {
         val uuid = runCatching { UUID.fromString(cardId) }.getOrNull() ?: return@transaction null
 
         val existing = HomeCardsTable
@@ -210,7 +210,7 @@ class HomeCardsRepository {
     }
 
     // Удаляет home-карточку, если она принадлежит пользователю.
-    fun deleteForUser(userId: UUID, cardId: String): Boolean = transaction {
+    open fun deleteForUser(userId: UUID, cardId: String): Boolean = transaction {
         val uuid = runCatching { UUID.fromString(cardId) }.getOrNull() ?: return@transaction false
 
         val deleted = HomeCardsTable.deleteWhere {

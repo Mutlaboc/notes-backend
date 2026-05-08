@@ -4,7 +4,8 @@ import com.example.mutlabocnotes.auth.AuthRepository
 import com.example.mutlabocnotes.auth.AuthService
 import com.example.mutlabocnotes.auth.BcryptPasswordHasher
 import com.example.mutlabocnotes.auth.DatabaseSocialUserResolver
-import com.example.mutlabocnotes.auth.ErrorResponseDto
+import com.example.mutlabocnotes.api.ApiErrorCodes
+import com.example.mutlabocnotes.api.respondApiError
 import com.example.mutlabocnotes.auth.GoogleTokenVerifierImpl
 import com.example.mutlabocnotes.auth.JwtTokenService
 import com.example.mutlabocnotes.auth.NotReadyYandexTokenVerifier
@@ -42,8 +43,6 @@ fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 // Собирает инфраструктуру приложения: плагины, базу данных и роуты.
 fun Application.module() {
-    val appLog = environment.log
-
     // Сначала применяем миграции, затем инициализируем подключение к БД.
     FlywayRunner.migrate(environment.config)
     DatabaseFactory.init(environment.config)
@@ -93,43 +92,7 @@ fun Application.module() {
     )
 
     // Централизованная обработка ошибок для единообразных ответов API.
-    install(StatusPages) {
-        exception<BadRequestException> { call, cause ->
-            call.respond(
-                HttpStatusCode.BadRequest,
-                mapOf("error" to (cause.message ?: "bad_request"))
-            )
-        }
-
-        exception<SocialTokenValidationException> { call, cause ->
-            call.respond(
-                HttpStatusCode.Unauthorized,
-                ErrorResponseDto(cause.message ?: "invalid_social_token")
-            )
-        }
-
-        exception<SocialIdentityResolutionException> { call, cause ->
-            call.respond(
-                HttpStatusCode.BadRequest,
-                ErrorResponseDto(cause.message ?: "social_identity_resolution_failed")
-            )
-        }
-
-        exception<SocialAuthNotReadyException> { call, cause ->
-            call.respond(
-                HttpStatusCode.NotImplemented,
-                ErrorResponseDto(cause.message ?: "social_auth_not_ready")
-            )
-        }
-
-        exception<Throwable> { call, cause ->
-            appLog.error("Unhandled error", cause)
-            call.respond(
-                HttpStatusCode.InternalServerError,
-                mapOf("error" to "internal_server_error")
-            )
-        }
-    }
+    configureApiErrorHandling()
 
     routing {
         // Технические эндпоинты для проверки доступности сервиса и базы.
@@ -172,5 +135,47 @@ fun Application.module() {
         )
 
         homeCardsRoutes()
+    }
+}
+
+// Centralized API error handling keeps route failures machine-readable.
+fun Application.configureApiErrorHandling() {
+    install(StatusPages) {
+        exception<BadRequestException> { call, cause ->
+            call.respondApiError(
+                status = HttpStatusCode.BadRequest,
+                code = ApiErrorCodes.INVALID_REQUEST,
+                message = cause.message
+            )
+        }
+
+        exception<SocialTokenValidationException> { call, cause ->
+            call.respondApiError(
+                status = HttpStatusCode.Unauthorized,
+                code = cause.message ?: ApiErrorCodes.UNAUTHORIZED
+            )
+        }
+
+        exception<SocialIdentityResolutionException> { call, cause ->
+            call.respondApiError(
+                status = HttpStatusCode.BadRequest,
+                code = cause.message ?: ApiErrorCodes.INVALID_REQUEST
+            )
+        }
+
+        exception<SocialAuthNotReadyException> { call, cause ->
+            call.respondApiError(
+                status = HttpStatusCode.NotImplemented,
+                code = cause.message ?: ApiErrorCodes.INTERNAL_SERVER_ERROR
+            )
+        }
+
+        exception<Throwable> { call, cause ->
+            call.application.environment.log.error("Unhandled error", cause)
+            call.respondApiError(
+                status = HttpStatusCode.InternalServerError,
+                code = ApiErrorCodes.INTERNAL_SERVER_ERROR
+            )
+        }
     }
 }

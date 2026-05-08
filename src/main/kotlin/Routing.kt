@@ -1,5 +1,7 @@
 package com.example.mutlabocnotes
 
+import com.example.mutlabocnotes.api.ApiErrorCodes
+import com.example.mutlabocnotes.api.respondApiError
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -15,7 +17,8 @@ import org.slf4j.event.*
 fun Application.configureRouting() {
     install(StatusPages) {
         exception<Throwable> { call, cause ->
-            call.respondText(text = "500: $cause" , status = HttpStatusCode.InternalServerError)
+            call.application.environment.log.error("Unhandled error", cause)
+            call.respondApiError(HttpStatusCode.InternalServerError, ApiErrorCodes.INTERNAL_SERVER_ERROR)
         }
     }
     routing {

@@ -1,5 +1,8 @@
 package com.example.mutlabocnotes.auth
 
+import com.example.mutlabocnotes.api.ApiErrorCodes
+import com.example.mutlabocnotes.api.respondApiError
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
@@ -21,6 +24,9 @@ fun Application.configureJwtAuthentication(
                 } else {
                     null
                 }
+            }
+            challenge { _, _ ->
+                call.respondApiError(HttpStatusCode.Unauthorized, ApiErrorCodes.UNAUTHORIZED)
             }
         }
     }
