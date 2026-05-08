@@ -199,7 +199,9 @@ class NotesRepository {
             deadlineMillis = this[NotesTable.deadlineAt]?.toInstant()?.toEpochMilli(),
             isRepeating = this[NotesTable.isRepeating],
             coinCount = this[NotesTable.coinCount],
-            isCompleted = this[NotesTable.isCompleted]
+            isCompleted = this[NotesTable.isCompleted],
+            createdAt = this[NotesTable.createdAt].toInstant().toEpochMilli(),
+            updatedAt = this[NotesTable.updatedAt].toInstant().toEpochMilli()
         )
 
     // Преобразует данные в нужный формат представления.

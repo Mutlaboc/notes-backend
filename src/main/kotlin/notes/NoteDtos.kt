@@ -20,7 +20,9 @@ data class NoteResponseDto(
     val deadlineMillis: Long? = null,
     val isRepeating: Boolean = false,
     val coinCount: Int = 0,
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
+    val createdAt: Long,
+    val updatedAt: Long
 )
 
 // DTO-модель для обмена данными между API и доменом.

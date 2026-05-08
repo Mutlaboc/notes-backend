@@ -33,6 +33,7 @@ import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
@@ -153,9 +154,94 @@ class ApiErrorContractTest {
         assertApiError(response, ApiErrorCodes.CARD_NOT_FOUND)
     }
 
+    @Test
+    fun negativeCoinCountOnCreateReturnsUnifiedSchema() = testApplication {
+        val jwtConfig = testJwtConfig()
+
+        application {
+            installContractRoutes(jwtConfig)
+        }
+
+        val response = client.post("/notes") {
+            bearerAuth(testToken(jwtConfig))
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody("""{"coinCount":-1}""")
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertApiError(response, ApiErrorCodes.INVALID_REQUEST)
+    }
+
+    @Test
+    fun negativeCoinCountOnUpdateReturnsUnifiedSchema() = testApplication {
+        val jwtConfig = testJwtConfig()
+
+        application {
+            installContractRoutes(jwtConfig)
+        }
+
+        val response = client.put("/notes/00000000-0000-0000-0000-000000000001") {
+            bearerAuth(testToken(jwtConfig))
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody("""{"coinCount":-1}""")
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertApiError(response, ApiErrorCodes.INVALID_REQUEST)
+    }
+
+    @Test
+    fun unknownNoteFieldReturnsUnifiedSchema() = testApplication {
+        val jwtConfig = testJwtConfig()
+
+        application {
+            installContractRoutes(jwtConfig)
+        }
+
+        val response = client.post("/notes") {
+            bearerAuth(testToken(jwtConfig))
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody("""{"title":"Note","unexpected":"value"}""")
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertApiError(response, ApiErrorCodes.INVALID_REQUEST)
+    }
+
+    @Test
+    fun unknownHomeCardFieldReturnsUnifiedSchema() = testApplication {
+        val jwtConfig = testJwtConfig()
+
+        application {
+            installContractRoutes(jwtConfig)
+        }
+
+        val response = client.post("/home-cards") {
+            bearerAuth(testToken(jwtConfig))
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(
+                """
+                {
+                  "title":"Meter",
+                  "section":"METERS",
+                  "fields":[],
+                  "note":"",
+                  "links":[],
+                  "createdAt":123,
+                  "updatedAt":456,
+                  "unexpected":"value"
+                }
+                """.trimIndent()
+            )
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertApiError(response, ApiErrorCodes.INVALID_REQUEST)
+    }
+
     private fun io.ktor.server.application.Application.installContractRoutes(jwtConfig: JwtConfig) {
         install(ContentNegotiation) {
-            json()
+            json(ApiJson)
         }
         configureApiErrorHandling()
         configureJwtAuthentication(

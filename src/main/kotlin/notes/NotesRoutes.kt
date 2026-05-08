@@ -45,6 +45,9 @@ fun Route.notesRoutes(
             post {
                 val userId = call.requireCurrentUserId() ?: return@post
                 val request = call.receive<CreateNoteRequestDto>()
+                if (request.coinCount < 0) {
+                    return@post call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST)
+                }
                 val created = notesService.create(userId, request)
                 call.respond(HttpStatusCode.Created, created)
             }
@@ -54,6 +57,9 @@ fun Route.notesRoutes(
                 val noteId = call.parameters["id"]?.toUuidOrNull()
                     ?: return@put call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_NOTE_ID)
                 val request = call.receive<UpdateNoteRequestDto>()
+                if (request.coinCount < 0) {
+                    return@put call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST)
+                }
 
                 val updated = notesService.update(userId, noteId, request)
                     ?: return@put call.respondApiError(HttpStatusCode.NotFound, ApiErrorCodes.NOTE_NOT_FOUND)

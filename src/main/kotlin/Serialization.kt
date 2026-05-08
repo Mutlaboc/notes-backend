@@ -9,12 +9,17 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.json.Json
 import org.slf4j.event.*
+
+val ApiJson = Json {
+    ignoreUnknownKeys = false
+}
 
 // Настраивает выбранную подсистему приложения.
 fun Application.configureSerialization() {
     install(ContentNegotiation) {
-        json()
+        json(ApiJson)
     }
     routing {
         get("/json/kotlinx-serialization") {

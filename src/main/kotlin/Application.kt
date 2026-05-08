@@ -83,7 +83,7 @@ fun Application.module() {
     install(CallLogging)
 
     install(ContentNegotiation) {
-        json()
+        json(ApiJson)
     }
 
     configureJwtAuthentication(

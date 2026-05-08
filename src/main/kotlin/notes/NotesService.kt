@@ -48,6 +48,8 @@ open class NotesService(
             deadlineMillis = deadlineMillis,
             isRepeating = isRepeating,
             coinCount = coinCount,
-            isCompleted = isCompleted
+            isCompleted = isCompleted,
+            createdAt = createdAt,
+            updatedAt = updatedAt
         )
 }

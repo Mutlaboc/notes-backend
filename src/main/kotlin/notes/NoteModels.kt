@@ -30,5 +30,7 @@ data class NoteModel(
     val deadlineMillis: Long?,
     val isRepeating: Boolean,
     val coinCount: Int,
-    val isCompleted: Boolean
+    val isCompleted: Boolean,
+    val createdAt: Long,
+    val updatedAt: Long
 )
