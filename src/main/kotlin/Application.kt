@@ -30,6 +30,7 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.application.install
+import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -113,16 +114,18 @@ fun Application.module() {
             )
         }
 
-        get("/health/db") {
-            val dbInfo = DatabaseFactory.testConnection()
+        authenticate("auth-jwt") {
+            get("/health/db") {
+                DatabaseFactory.testConnection()
 
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf(
-                    "status" to "ok",
-                    "database" to dbInfo
+                call.respond(
+                    HttpStatusCode.OK,
+                    mapOf(
+                        "status" to "ok",
+                        "database" to "reachable"
+                    )
                 )
-            )
+            }
         }
 
         authRoutes(

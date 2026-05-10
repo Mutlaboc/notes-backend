@@ -56,18 +56,20 @@ object DatabaseFactory {
     }
 
     // Реализует шаг «test connection» в рамках текущего процесса.
-    fun testConnection(): String {
+    fun testConnection() {
         check(::database.isInitialized) {
             "DatabaseFactory is not initialized"
         }
 
-        return transaction(database) {
-            exec("SELECT current_database(), version();") { rs ->
+        transaction(database) {
+            val result = exec("SELECT 1;") { rs ->
                 rs.next()
-                val dbName = rs.getString(1)
-                val version = rs.getString(2)
-                "db=$dbName; version=$version"
-            } ?: error("Database test query returned no rows")
+                rs.getInt(1)
+            }
+
+            require(result == 1) {
+                "Database test query failed: expected 1, got $result"
+            }
         }
     }
 
