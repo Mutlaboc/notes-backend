@@ -61,6 +61,16 @@ fun Route.authRoutes(
             }
         }
 
+        post("/logout") {
+            try {
+                val request = call.receive<LogoutRequestDto>()
+                authService.logout(request)
+                call.respond(HttpStatusCode.NoContent)
+            } catch (e: IllegalArgumentException) {
+                call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST, e.message)
+            }
+        }
+
         route("/social") {
             post("/google") {
                 try {

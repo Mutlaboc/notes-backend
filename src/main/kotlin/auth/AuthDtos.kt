@@ -23,6 +23,11 @@ data class RefreshTokenRequestDto(
     val refreshToken: String
 )
 
+@Serializable
+data class LogoutRequestDto(
+    val refreshToken: String
+)
+
 // DTO-модель для обмена данными между API и доменом.
 @Serializable
 data class AuthUserResponseDto(

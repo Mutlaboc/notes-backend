@@ -85,7 +85,16 @@ class AuthService(
         return buildAuthResponse(user)
     }
 
-    // Возвращает профиль текущего авторизованного пользователя.
+    // Revokes the current session refresh token without revealing whether it existed.
+    suspend fun logout(request: LogoutRequestDto) {
+        val rawRefreshToken = request.refreshToken.trim()
+        require(rawRefreshToken.isNotEmpty()) { "Refresh token is required" }
+
+        val tokenHash = refreshTokenService.hash(rawRefreshToken)
+        refreshTokenRepository.revokeByTokenHash(tokenHash)
+    }
+
+    // Returns the profile for the current authenticated user.
     suspend fun me(userId: Uuid): AuthUserResponseDto {
         val user = authRepository.findById(userId)
             ?: throw UnauthorizedAuthException()
