@@ -48,6 +48,9 @@ fun Route.homeCardsRoutes(
             post {
                 val userId = call.requireCurrentUserId()?.let { UUID.fromString(it.toString()) } ?: return@post
                 val request = call.receive<HomeCardUpsertRequestDto>()
+                if (!request.isValid()) {
+                    return@post call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST)
+                }
                 val created = repository.createForUser(userId, request)
                 call.respond(HttpStatusCode.Created, created)
             }
@@ -59,6 +62,9 @@ fun Route.homeCardsRoutes(
                     ?: return@put call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_CARD_ID)
 
                 val request = call.receive<HomeCardUpsertRequestDto>()
+                if (!request.isValid()) {
+                    return@put call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST)
+                }
                 val updated = repository.updateForUser(userId, cardId, request)
                 if (updated == null) {
                     call.respondApiError(HttpStatusCode.NotFound, ApiErrorCodes.CARD_NOT_FOUND)
@@ -90,3 +96,15 @@ private fun String.validatedCardIdOrNull(): String? =
     trim().takeIf { it.isNotEmpty() }?.takeIf { id ->
         runCatching { UUID.fromString(id) }.isSuccess
     }
+
+private val validHomeCardSections = setOf(
+    "METERS",
+    "APPLIANCES",
+    "LIGHTING",
+    "DOCUMENTS",
+    "CONTACTS",
+    "OTHER"
+)
+
+private fun HomeCardUpsertRequestDto.isValid(): Boolean =
+    section in validHomeCardSections && links.none { it.isBlank() }
