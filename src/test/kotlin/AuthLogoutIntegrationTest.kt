@@ -16,7 +16,6 @@ import com.example.mutlabocnotes.auth.SocialAuthService
 import com.example.mutlabocnotes.auth.UserIdentityRepository
 import com.example.mutlabocnotes.auth.authRoutes
 import com.example.mutlabocnotes.auth.configureJwtAuthentication
-import com.example.mutlabocnotes.database.DatabaseFactory
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -29,7 +28,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
-import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.ApplicationTestBuilder
@@ -40,9 +38,7 @@ import kotlin.test.assertEquals
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.junit.AssumptionViolatedException
 import org.junit.BeforeClass
-import org.testcontainers.containers.PostgreSQLContainer
 
 class AuthLogoutIntegrationTest {
 
@@ -183,35 +179,10 @@ class AuthLogoutIntegrationTest {
         )
 
     companion object {
-        private val postgres = PostgreSQLContainer("postgres:16-alpine")
-
         @JvmStatic
         @BeforeClass
         fun initializeDatabase() {
-            try {
-                postgres.start()
-            } catch (e: IllegalStateException) {
-                throw AssumptionViolatedException("Docker is required for PostgreSQL integration tests", e)
-            }
-
-            val config = MapApplicationConfig(
-                "db.driverClassName" to postgres.driverClassName,
-                "db.jdbcUrl" to postgres.jdbcUrl,
-                "db.username" to postgres.username,
-                "db.password" to postgres.password,
-                "db.maximumPoolSize" to "3",
-                "db.minimumIdle" to "1",
-                "db.connectionTimeoutMs" to "10000",
-                "db.idleTimeoutMs" to "600000",
-                "db.maxLifetimeMs" to "1800000",
-                "db.autoCommit" to "false",
-                "flyway.enabled" to "true",
-                "flyway.locations" to "classpath:db/migration",
-                "flyway.validateMigrationNaming" to "true"
-            )
-
-            FlywayRunner.migrate(config)
-            DatabaseFactory.init(config)
+            BackendTestDatabase.initialize(includeJwt = false)
         }
     }
 }

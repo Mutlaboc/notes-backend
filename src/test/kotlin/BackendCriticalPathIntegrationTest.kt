@@ -149,6 +149,146 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
     }
 
     @Test
+    fun authMeRequiresJwtAndReturnsCurrentUser() = testApplication {
+        startBackend()
+
+        val anonymous = client.get("/auth/me")
+
+        assertEquals(HttpStatusCode.Unauthorized, anonymous.status)
+        assertApiError(anonymous, ApiErrorCodes.UNAUTHORIZED)
+
+        val session = registerUser(
+            email = "me-${UUID.randomUUID()}@example.com",
+            displayName = "Current User"
+        )
+        val response = client.get("/auth/me") {
+            bearerAuth(session.accessToken)
+        }
+        val body = response.jsonObject()
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(session.user.id, body["id"]?.jsonPrimitive?.content)
+        assertEquals(session.user.email, body["email"]?.jsonPrimitive?.content)
+        assertEquals(session.user.bridgeUserKey, body["bridgeUserKey"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun socialAuthNotReadyUsesUnifiedContract() = testApplication {
+        startBackend()
+
+        val google = client.post("/auth/social/google") {
+            jsonBody("""{"idToken":"fake-google-token"}""")
+        }
+
+        assertEquals(HttpStatusCode.NotImplemented, google.status)
+        assertApiError(google, "google_auth_not_configured")
+
+        val yandex = client.post("/auth/social/yandex") {
+            jsonBody("""{"accessToken":"fake-yandex-token"}""")
+        }
+
+        assertEquals(HttpStatusCode.NotImplemented, yandex.status)
+        assertApiError(yandex, "yandex_auth_not_configured")
+    }
+
+    @Test
+    fun notesFullCrudIsUserScopedAndPreservesResponseShape() = testApplication {
+        startBackend()
+
+        val owner = registerUser(email = "notes-owner-${UUID.randomUUID()}@example.com")
+        val other = registerUser(email = "notes-other-${UUID.randomUUID()}@example.com")
+
+        val create = client.post("/notes") {
+            bearerAuth(owner.accessToken)
+            jsonBody(
+                """
+                {
+                  "title":"Groceries",
+                  "content":"ignored for shopping",
+                  "category":"SHOPPING",
+                  "checklist":[{"text":" Milk ","isChecked":false}],
+                  "deadlineMillis":1893456000000,
+                  "isRepeating":true,
+                  "coinCount":2,
+                  "isCompleted":false
+                }
+                """.trimIndent()
+            )
+        }
+        val created = create.jsonObject()
+        val noteId = created["id"]?.jsonPrimitive?.content ?: error("note id missing")
+
+        assertEquals(HttpStatusCode.Created, create.status)
+        assertEquals("Groceries", created["title"]?.jsonPrimitive?.content)
+        assertEquals("SHOPPING", created["category"]?.jsonPrimitive?.content)
+        assertEquals("", created["content"]?.jsonPrimitive?.content)
+        assertEquals("Milk", created["checklist"]?.jsonArray?.get(0)?.jsonObject?.get("text")?.jsonPrimitive?.content)
+        assertEquals("false", created["isRepeating"]?.jsonPrimitive?.content)
+        assertNotNull(created["createdAt"]?.jsonPrimitive?.content)
+        assertNotNull(created["updatedAt"]?.jsonPrimitive?.content)
+
+        val list = client.get("/notes") {
+            bearerAuth(owner.accessToken)
+        }
+
+        assertEquals(HttpStatusCode.OK, list.status)
+        assertEquals(noteId, list.jsonObjectOrArrayFirstId())
+
+        val byId = client.get("/notes/$noteId") {
+            bearerAuth(owner.accessToken)
+        }
+
+        assertEquals(HttpStatusCode.OK, byId.status)
+        assertEquals(noteId, byId.jsonObject()["id"]?.jsonPrimitive?.content)
+
+        val otherUserRead = client.get("/notes/$noteId") {
+            bearerAuth(other.accessToken)
+        }
+
+        assertEquals(HttpStatusCode.NotFound, otherUserRead.status)
+        assertApiError(otherUserRead, ApiErrorCodes.NOTE_NOT_FOUND)
+
+        val update = client.put("/notes/$noteId") {
+            bearerAuth(owner.accessToken)
+            jsonBody(
+                """
+                {
+                  "title":"Updated task",
+                  "content":"Task body",
+                  "category":"TASKS",
+                  "checklist":[{"text":"ignored","isChecked":true}],
+                  "deadlineMillis":1893456000000,
+                  "isRepeating":true,
+                  "coinCount":3,
+                  "isCompleted":true
+                }
+                """.trimIndent()
+            )
+        }
+        val updated = update.jsonObject()
+
+        assertEquals(HttpStatusCode.OK, update.status)
+        assertEquals(noteId, updated["id"]?.jsonPrimitive?.content)
+        assertEquals("TASKS", updated["category"]?.jsonPrimitive?.content)
+        assertEquals("Task body", updated["content"]?.jsonPrimitive?.content)
+        assertEquals(0, updated["checklist"]?.jsonArray?.size)
+        assertEquals("true", updated["isRepeating"]?.jsonPrimitive?.content)
+
+        val delete = client.delete("/notes/$noteId") {
+            bearerAuth(owner.accessToken)
+        }
+
+        assertEquals(HttpStatusCode.NoContent, delete.status)
+
+        val afterDelete = client.get("/notes/$noteId") {
+            bearerAuth(owner.accessToken)
+        }
+
+        assertEquals(HttpStatusCode.NotFound, afterDelete.status)
+        assertApiError(afterDelete, ApiErrorCodes.NOTE_NOT_FOUND)
+    }
+
+    @Test
     fun notesCompletionRequiresAuthAndTogglesForOwner() = testApplication {
         startBackend()
 
@@ -326,6 +466,73 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
     }
 
     @Test
+    fun homeCardsFullCrudIsUserScopedAndUsesServerTimestamps() = testApplication {
+        startBackend()
+
+        val owner = registerUser(email = "cards-owner-${UUID.randomUUID()}@example.com")
+        val other = registerUser(email = "cards-other-${UUID.randomUUID()}@example.com")
+
+        val create = client.post("/home-cards") {
+            bearerAuth(owner.accessToken)
+            jsonBody(validHomeCardBody("Meter", "METERS"))
+        }
+        val created = create.jsonObject()
+        val cardId = created["id"]?.jsonPrimitive?.content ?: error("card id missing")
+        val createdAt = created["createdAt"]?.jsonPrimitive?.content?.toLong() ?: error("createdAt missing")
+        val updatedAt = created["updatedAt"]?.jsonPrimitive?.content?.toLong() ?: error("updatedAt missing")
+
+        assertEquals(HttpStatusCode.Created, create.status)
+        assertNotEquals(123L, createdAt)
+        assertNotEquals(456L, updatedAt)
+
+        val list = client.get("/home-cards") {
+            bearerAuth(owner.accessToken)
+        }
+
+        assertEquals(HttpStatusCode.OK, list.status)
+        assertEquals(cardId, list.jsonObjectOrArrayFirstId())
+
+        val byId = client.get("/home-cards/$cardId") {
+            bearerAuth(owner.accessToken)
+        }
+
+        assertEquals(HttpStatusCode.OK, byId.status)
+        assertEquals(cardId, byId.jsonObject()["id"]?.jsonPrimitive?.content)
+
+        val otherUserRead = client.get("/home-cards/$cardId") {
+            bearerAuth(other.accessToken)
+        }
+
+        assertEquals(HttpStatusCode.NotFound, otherUserRead.status)
+        assertApiError(otherUserRead, ApiErrorCodes.CARD_NOT_FOUND)
+
+        val update = client.put("/home-cards/$cardId") {
+            bearerAuth(owner.accessToken)
+            jsonBody(validHomeCardBody("Manuals", "DOCUMENTS"))
+        }
+        val updated = update.jsonObject()
+
+        assertEquals(HttpStatusCode.OK, update.status)
+        assertEquals(cardId, updated["id"]?.jsonPrimitive?.content)
+        assertEquals("Manuals", updated["title"]?.jsonPrimitive?.content)
+        assertEquals(createdAt.toString(), updated["createdAt"]?.jsonPrimitive?.content)
+        assertNotEquals(456L, updated["updatedAt"]?.jsonPrimitive?.content?.toLong())
+
+        val delete = client.delete("/home-cards/$cardId") {
+            bearerAuth(owner.accessToken)
+        }
+
+        assertEquals(HttpStatusCode.NoContent, delete.status)
+
+        val afterDelete = client.get("/home-cards/$cardId") {
+            bearerAuth(owner.accessToken)
+        }
+
+        assertEquals(HttpStatusCode.NotFound, afterDelete.status)
+        assertApiError(afterDelete, ApiErrorCodes.CARD_NOT_FOUND)
+    }
+
+    @Test
     fun diagnosticsKeepPublicAndProtectedBoundaries() = testApplication {
         startBackend()
 
@@ -371,4 +578,10 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
           "updatedAt":456
         }
         """.trimIndent()
+
+    private suspend fun io.ktor.client.statement.HttpResponse.jsonObjectOrArrayFirstId(): String {
+        val element = json.parseToJsonElement(bodyAsText())
+        return element.jsonArray.first().jsonObject["id"]?.jsonPrimitive?.content
+            ?: error("id missing")
+    }
 }

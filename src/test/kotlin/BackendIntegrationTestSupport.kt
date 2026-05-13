@@ -1,7 +1,6 @@
 package com.example.mutlabocnotes
 
 import com.example.mutlabocnotes.auth.AuthResponseDto
-import com.example.mutlabocnotes.database.DatabaseFactory
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -23,9 +22,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.junit.AssumptionViolatedException
 import org.junit.BeforeClass
-import org.testcontainers.containers.PostgreSQLContainer
 
 abstract class BackendIntegrationTestSupport {
 
@@ -93,43 +90,13 @@ abstract class BackendIntegrationTestSupport {
     companion object {
         const val DEFAULT_PASSWORD = "12345678"
 
-        private val postgres = PostgreSQLContainer("postgres:16-alpine")
-
         @JvmStatic
         @BeforeClass
         fun initializeDatabase() {
-            try {
-                postgres.start()
-            } catch (e: IllegalStateException) {
-                throw AssumptionViolatedException("Docker is required for PostgreSQL integration tests", e)
-            }
-
-            val config = testApplicationConfig()
-            FlywayRunner.migrate(config)
-            DatabaseFactory.init(config)
+            BackendTestDatabase.initialize()
         }
 
         fun testApplicationConfig(): MapApplicationConfig =
-            MapApplicationConfig(
-                "db.driverClassName" to postgres.driverClassName,
-                "db.jdbcUrl" to postgres.jdbcUrl,
-                "db.username" to postgres.username,
-                "db.password" to postgres.password,
-                "db.maximumPoolSize" to "3",
-                "db.minimumIdle" to "1",
-                "db.connectionTimeoutMs" to "10000",
-                "db.idleTimeoutMs" to "600000",
-                "db.maxLifetimeMs" to "1800000",
-                "db.autoCommit" to "false",
-                "flyway.enabled" to "true",
-                "flyway.locations" to "classpath:db/migration",
-                "flyway.validateMigrationNaming" to "true",
-                "jwt.issuer" to "test-issuer",
-                "jwt.audience" to "test-audience",
-                "jwt.realm" to "test-realm",
-                "jwt.secret" to "test-secret-that-is-long-enough-for-hmac",
-                "jwt.accessTokenTtlSeconds" to "1800",
-                "jwt.refreshTokenTtlSeconds" to "1209600"
-            )
+            BackendTestDatabase.testApplicationConfig()
     }
 }

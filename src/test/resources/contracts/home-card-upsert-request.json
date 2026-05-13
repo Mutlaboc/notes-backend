@@ -1,0 +1,16 @@
+{
+  "title": "Manuals",
+  "section": "DOCUMENTS",
+  "fields": [
+    {
+      "key": "serial",
+      "value": "A-1"
+    }
+  ],
+  "note": "Changed",
+  "links": [
+    "https://example.com/first"
+  ],
+  "createdAt": 123,
+  "updatedAt": 456
+}

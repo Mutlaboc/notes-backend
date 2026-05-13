@@ -1,0 +1,110 @@
+name: Backend CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - master
+  push:
+    branches:
+      - develop
+      - master
+
+jobs:
+  test-and-package:
+    name: test + shadowJar
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: notes_backend_test
+          POSTGRES_USER: notes_backend
+          POSTGRES_PASSWORD: notes_backend
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U notes_backend -d notes_backend_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      TEST_DB_JDBC_URL: jdbc:postgresql://localhost:5432/notes_backend_test
+      TEST_DB_USERNAME: notes_backend
+      TEST_DB_PASSWORD: notes_backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Run tests and build fat jar
+        run: ./gradlew test shadowJar
+
+      - name: Verify CI did not skip tests
+        shell: bash
+        run: |
+          skipped=0
+          for file in build/test-results/test/TEST-*.xml; do
+            value=$(grep -o 'skipped="[0-9]*"' "$file" | head -1 | grep -o '[0-9]*')
+            skipped=$((skipped + value))
+          done
+
+          if [[ "$skipped" -ne 0 ]]; then
+            echo "Expected zero skipped backend tests in CI, found $skipped."
+            exit 1
+          fi
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: build/test-results/test
+
+      - name: Upload fat jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: notes-backend-all
+          path: build/libs/notes-backend-all.jar
+
+      - name: Publish backend summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Backend CI summary"
+            echo
+            if compgen -G "build/test-results/test/TEST-*.xml" > /dev/null; then
+              tests=0
+              failures=0
+              errors=0
+              skipped=0
+              for file in build/test-results/test/TEST-*.xml; do
+                tests=$((tests + $(grep -o 'tests="[0-9]*"' "$file" | head -1 | grep -o '[0-9]*')))
+                failures=$((failures + $(grep -o 'failures="[0-9]*"' "$file" | head -1 | grep -o '[0-9]*')))
+                errors=$((errors + $(grep -o 'errors="[0-9]*"' "$file" | head -1 | grep -o '[0-9]*')))
+                skipped=$((skipped + $(grep -o 'skipped="[0-9]*"' "$file" | head -1 | grep -o '[0-9]*')))
+              done
+              echo "- Tests: $tests"
+              echo "- Failures: $failures"
+              echo "- Errors: $errors"
+              echo "- Skipped: $skipped"
+            else
+              echo "- No JUnit XML files found."
+            fi
+            echo "- Fat jar: build/libs/notes-backend-all.jar"
+          } >> "$GITHUB_STEP_SUMMARY"

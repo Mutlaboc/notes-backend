@@ -1,14 +1,12 @@
 package com.example.mutlabocnotes
 
 import com.example.mutlabocnotes.auth.AuthRepository
-import com.example.mutlabocnotes.database.DatabaseFactory
 import com.example.mutlabocnotes.homecards.HomeCardUpsertRequestDto
 import com.example.mutlabocnotes.homecards.HomeCardsRepository
 import com.example.mutlabocnotes.notes.CreateNoteRequestDto
 import com.example.mutlabocnotes.notes.NoteCategory
 import com.example.mutlabocnotes.notes.NotesRepository
 import com.example.mutlabocnotes.notes.UpdateNoteRequestDto
-import io.ktor.server.config.MapApplicationConfig
 import java.util.UUID
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -17,9 +15,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import kotlin.uuid.ExperimentalUuidApi
 import kotlinx.coroutines.runBlocking
-import org.junit.AssumptionViolatedException
 import org.junit.BeforeClass
-import org.testcontainers.containers.PostgreSQLContainer
 
 @OptIn(ExperimentalUuidApi::class)
 class CanonicalTimestampIntegrationTest {
@@ -138,8 +134,6 @@ class CanonicalTimestampIntegrationTest {
         ).id
 
     companion object {
-        private val postgres = PostgreSQLContainer("postgres:16-alpine")
-
         private lateinit var notesRepository: NotesRepository
         private lateinit var homeCardsRepository: HomeCardsRepository
         private lateinit var authRepository: AuthRepository
@@ -147,30 +141,7 @@ class CanonicalTimestampIntegrationTest {
         @JvmStatic
         @BeforeClass
         fun initializeDatabase() {
-            try {
-                postgres.start()
-            } catch (e: IllegalStateException) {
-                throw AssumptionViolatedException("Docker is required for PostgreSQL integration tests", e)
-            }
-
-            val config = MapApplicationConfig(
-                "db.driverClassName" to postgres.driverClassName,
-                "db.jdbcUrl" to postgres.jdbcUrl,
-                "db.username" to postgres.username,
-                "db.password" to postgres.password,
-                "db.maximumPoolSize" to "3",
-                "db.minimumIdle" to "1",
-                "db.connectionTimeoutMs" to "10000",
-                "db.idleTimeoutMs" to "600000",
-                "db.maxLifetimeMs" to "1800000",
-                "db.autoCommit" to "false",
-                "flyway.enabled" to "true",
-                "flyway.locations" to "classpath:db/migration",
-                "flyway.validateMigrationNaming" to "true"
-            )
-
-            FlywayRunner.migrate(config)
-            DatabaseFactory.init(config)
+            BackendTestDatabase.initialize(includeJwt = false)
         }
     }
 }

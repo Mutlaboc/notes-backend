@@ -1,0 +1,14 @@
+{
+  "accessToken": "access-token",
+  "refreshToken": "refresh-token",
+  "tokenType": "Bearer",
+  "expiresInSeconds": 1800,
+  "refreshExpiresInSeconds": 1209600,
+  "bridgeUserKey": "local:fixture-user@example.com",
+  "user": {
+    "id": "00000000-0000-0000-0000-000000000100",
+    "email": "fixture-user@example.com",
+    "displayName": "Fixture User",
+    "bridgeUserKey": "local:fixture-user@example.com"
+  }
+}

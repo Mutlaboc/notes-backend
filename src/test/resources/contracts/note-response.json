@@ -1,0 +1,18 @@
+{
+  "id": "00000000-0000-0000-0000-000000000200",
+  "title": "Groceries",
+  "content": "",
+  "category": "SHOPPING",
+  "checklist": [
+    {
+      "text": "Milk",
+      "isChecked": false
+    }
+  ],
+  "deadlineMillis": 1893456000000,
+  "isRepeating": false,
+  "coinCount": 2,
+  "isCompleted": false,
+  "createdAt": 1710000000000,
+  "updatedAt": 1710000001000
+}

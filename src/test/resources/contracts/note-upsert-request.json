@@ -1,0 +1,10 @@
+{
+  "title": "Updated task",
+  "content": "Task body",
+  "category": "TASKS",
+  "checklist": [],
+  "deadlineMillis": 1893456000000,
+  "isRepeating": true,
+  "coinCount": 3,
+  "isCompleted": true
+}

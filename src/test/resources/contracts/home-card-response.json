@@ -1,0 +1,17 @@
+{
+  "id": "00000000-0000-0000-0000-000000000300",
+  "title": "Meter",
+  "section": "METERS",
+  "fields": [
+    {
+      "key": "serial",
+      "value": "A-1"
+    }
+  ],
+  "note": "Keep visible",
+  "links": [
+    "https://example.com/first"
+  ],
+  "createdAt": 1710000000000,
+  "updatedAt": 1710000001000
+}
