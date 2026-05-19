@@ -94,7 +94,7 @@ class NotesRepository {
                 it[content] = normalizedContent(request.category, request.content)
                 it[category] = request.category.name
                 it[deadlineAt] = request.deadlineMillis?.toOffsetDateTimeUtc()
-                it[isRepeating] = normalizedIsRepeating(request.category, request.isRepeating)
+                it[repeatRule] = normalizedRepeatRule(request.category, request.repeatRule).name
                 it[coinCount] = request.coinCount
                 it[isCompleted] = request.isCompleted
             }
@@ -116,7 +116,7 @@ class NotesRepository {
                 it[content] = normalizedContent(request.category, request.content)
                 it[category] = request.category.name
                 it[deadlineAt] = request.deadlineMillis?.toOffsetDateTimeUtc()
-                it[isRepeating] = normalizedIsRepeating(request.category, request.isRepeating)
+                it[repeatRule] = normalizedRepeatRule(request.category, request.repeatRule).name
                 it[coinCount] = request.coinCount
                 it[isCompleted] = request.isCompleted
             }
@@ -184,8 +184,8 @@ class NotesRepository {
         if (category == NoteCategory.SHOPPING) "" else content
 
     // Выдаёт признак повторения только для задач.
-    private fun normalizedIsRepeating(category: NoteCategory, isRepeating: Boolean): Boolean =
-        category == NoteCategory.TASKS && isRepeating
+    private fun normalizedRepeatRule(category: NoteCategory, repeatRule: RepeatRule): RepeatRule =
+        if (category == NoteCategory.TASKS) repeatRule else RepeatRule.NONE
 
     // Преобразует данные в нужный формат представления.
     private fun ResultRow.toNoteModel(checklist: List<ChecklistItemModel>): NoteModel =
@@ -197,7 +197,7 @@ class NotesRepository {
             category = NoteCategory.valueOf(this[NotesTable.category]),
             checklist = checklist,
             deadlineMillis = this[NotesTable.deadlineAt]?.toInstant()?.toEpochMilli(),
-            isRepeating = this[NotesTable.isRepeating],
+            repeatRule = RepeatRule.valueOf(this[NotesTable.repeatRule]),
             coinCount = this[NotesTable.coinCount],
             isCompleted = this[NotesTable.isCompleted],
             createdAt = this[NotesTable.createdAt].toInstant().toEpochMilli(),

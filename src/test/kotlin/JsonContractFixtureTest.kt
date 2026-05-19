@@ -7,9 +7,9 @@ import com.example.mutlabocnotes.homecards.HomeCardUpsertRequestDto
 import com.example.mutlabocnotes.notes.CreateNoteRequestDto
 import com.example.mutlabocnotes.notes.NoteCategory
 import com.example.mutlabocnotes.notes.NoteResponseDto
+import com.example.mutlabocnotes.notes.RepeatRule
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlinx.serialization.decodeFromString
 
 class JsonContractFixtureTest {
@@ -35,13 +35,13 @@ class JsonContractFixtureTest {
         assertEquals("Groceries", response.title)
         assertEquals(NoteCategory.SHOPPING, response.category)
         assertEquals("Milk", response.checklist.single().text)
-        assertFalse(response.isRepeating)
+        assertEquals(RepeatRule.NONE, response.repeatRule)
         assertEquals(1710000001000, response.updatedAt)
 
         assertEquals("Updated task", request.title)
         assertEquals(NoteCategory.TASKS, request.category)
         assertEquals(3, request.coinCount)
-        assertEquals(true, request.isRepeating)
+        assertEquals(RepeatRule.WEEKLY, request.repeatRule)
     }
 
     @Test

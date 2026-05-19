@@ -18,7 +18,7 @@ data class NoteResponseDto(
     val category: NoteCategory,
     val checklist: List<ChecklistItemDto>,
     val deadlineMillis: Long? = null,
-    val isRepeating: Boolean = false,
+    val repeatRule: RepeatRule = RepeatRule.NONE,
     val coinCount: Int = 0,
     val isCompleted: Boolean = false,
     val createdAt: Long,
@@ -33,7 +33,7 @@ data class CreateNoteRequestDto(
     val category: NoteCategory = NoteCategory.NOTES,
     val checklist: List<ChecklistItemDto> = emptyList(),
     val deadlineMillis: Long? = null,
-    val isRepeating: Boolean = false,
+    val repeatRule: RepeatRule = RepeatRule.NONE,
     val coinCount: Int = 0,
     val isCompleted: Boolean = false
 )
@@ -46,7 +46,7 @@ data class UpdateNoteRequestDto(
     val category: NoteCategory = NoteCategory.NOTES,
     val checklist: List<ChecklistItemDto> = emptyList(),
     val deadlineMillis: Long? = null,
-    val isRepeating: Boolean = false,
+    val repeatRule: RepeatRule = RepeatRule.NONE,
     val coinCount: Int = 0,
     val isCompleted: Boolean = false
 )

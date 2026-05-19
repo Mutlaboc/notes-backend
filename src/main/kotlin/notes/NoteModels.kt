@@ -13,6 +13,14 @@ enum class NoteCategory {
     NOTES
 }
 
+@Serializable
+enum class RepeatRule {
+    NONE,
+    DAILY,
+    WEEKLY,
+    MONTHLY
+}
+
 // Модель данных, используемая в бизнес-логике.
 data class ChecklistItemModel(
     val text: String,
@@ -28,7 +36,7 @@ data class NoteModel(
     val category: NoteCategory,
     val checklist: List<ChecklistItemModel>,
     val deadlineMillis: Long?,
-    val isRepeating: Boolean,
+    val repeatRule: RepeatRule,
     val coinCount: Int,
     val isCompleted: Boolean,
     val createdAt: Long,
