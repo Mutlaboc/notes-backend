@@ -10,7 +10,5 @@
   "note": "Changed",
   "links": [
     "https://example.com/first"
-  ],
-  "createdAt": 123,
-  "updatedAt": 456
+  ]
 }

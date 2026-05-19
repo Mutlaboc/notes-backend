@@ -32,6 +32,4 @@ data class HomeCardUpsertRequestDto(
     val fields: List<HomeFieldDto>,
     val note: String,
     val links: List<String>,
-    val createdAt: Long = 0,
-    val updatedAt: Long = 0,
 )

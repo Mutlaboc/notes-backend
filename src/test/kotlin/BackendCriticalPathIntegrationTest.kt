@@ -482,8 +482,8 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
         val updatedAt = created["updatedAt"]?.jsonPrimitive?.content?.toLong() ?: error("updatedAt missing")
 
         assertEquals(HttpStatusCode.Created, create.status)
-        assertNotEquals(123L, createdAt)
-        assertNotEquals(456L, updatedAt)
+        assertTrue(createdAt > 0)
+        assertTrue(updatedAt > 0)
 
         val list = client.get("/home-cards") {
             bearerAuth(owner.accessToken)
@@ -516,7 +516,7 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
         assertEquals(cardId, updated["id"]?.jsonPrimitive?.content)
         assertEquals("Manuals", updated["title"]?.jsonPrimitive?.content)
         assertEquals(createdAt.toString(), updated["createdAt"]?.jsonPrimitive?.content)
-        assertNotEquals(456L, updated["updatedAt"]?.jsonPrimitive?.content?.toLong())
+        assertTrue((updated["updatedAt"]?.jsonPrimitive?.content?.toLong() ?: 0L) >= updatedAt)
 
         val delete = client.delete("/home-cards/$cardId") {
             bearerAuth(owner.accessToken)
@@ -573,9 +573,7 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
           "links":[
             "https://example.com/first",
             "https://example.com/second"
-          ],
-          "createdAt":123,
-          "updatedAt":456
+          ]
         }
         """.trimIndent()
 

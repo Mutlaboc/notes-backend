@@ -209,7 +209,7 @@ class ApiErrorContractTest {
     }
 
     @Test
-    fun unknownHomeCardFieldReturnsUnifiedSchema() = testApplication {
+    fun legacyHomeCardTimestampFieldsReturnUnifiedSchema() = testApplication {
         val jwtConfig = testJwtConfig()
 
         application {
@@ -228,8 +228,7 @@ class ApiErrorContractTest {
                   "note":"",
                   "links":[],
                   "createdAt":123,
-                  "updatedAt":456,
-                  "unexpected":"value"
+                  "updatedAt":456
                 }
                 """.trimIndent()
             )
