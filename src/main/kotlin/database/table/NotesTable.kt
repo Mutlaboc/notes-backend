@@ -14,7 +14,7 @@ object NotesTable : Table("notes") {
     val content = text("content")
     val category = text("category")
     val deadlineAt = timestampWithTimeZone("deadline_at").nullable()
-    val isRepeating = bool("is_repeating").default(false)
+    val repeatRule = text("repeat_rule").default("NONE")
     val coinCount = integer("coin_count").default(0)
     val isCompleted = bool("is_completed").default(false)
     val createdAt = timestampWithTimeZone("created_at")

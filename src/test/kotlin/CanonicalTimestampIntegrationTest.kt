@@ -11,7 +11,6 @@ import java.util.UUID
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import kotlin.uuid.ExperimentalUuidApi
 import kotlinx.coroutines.runBlocking
@@ -61,10 +60,8 @@ class CanonicalTimestampIntegrationTest {
     }
 
     @Test
-    fun homeCardCreateIgnoresForgedTimestamps() = runBlocking {
+    fun homeCardCreateReturnsServerTimestamps() = runBlocking {
         val userId = UUID.fromString(createUser().toString())
-        val forgedCreatedAt = 946684800000L
-        val forgedUpdatedAt = 4102444800000L
         val beforeCreate = System.currentTimeMillis() - 5_000
 
         val created = homeCardsRepository.createForUser(
@@ -74,22 +71,18 @@ class CanonicalTimestampIntegrationTest {
                 section = "METERS",
                 fields = emptyList(),
                 note = "",
-                links = emptyList(),
-                createdAt = forgedCreatedAt,
-                updatedAt = forgedUpdatedAt
+                links = emptyList()
             )
         )
 
         val afterCreate = System.currentTimeMillis() + 5_000
 
-        assertNotEquals(forgedCreatedAt, created.createdAt)
-        assertNotEquals(forgedUpdatedAt, created.updatedAt)
         assertTrue(created.createdAt in beforeCreate..afterCreate)
         assertTrue(created.updatedAt in beforeCreate..afterCreate)
     }
 
     @Test
-    fun homeCardUpdatePreservesCreatedAtAndIgnoresForgedTimestamps() = runBlocking {
+    fun homeCardUpdatePreservesCreatedAtAndReturnsServerTimestamp() = runBlocking {
         val userId = UUID.fromString(createUser().toString())
         val created = homeCardsRepository.createForUser(
             userId = userId,
@@ -98,9 +91,7 @@ class CanonicalTimestampIntegrationTest {
                 section = "OTHER",
                 fields = emptyList(),
                 note = "",
-                links = emptyList(),
-                createdAt = 946684800000L,
-                updatedAt = 946684800000L
+                links = emptyList()
             )
         )
 
@@ -114,15 +105,11 @@ class CanonicalTimestampIntegrationTest {
                 section = "DOCUMENTS",
                 fields = emptyList(),
                 note = "Changed",
-                links = emptyList(),
-                createdAt = 4102444800000L,
-                updatedAt = 946684800000L
+                links = emptyList()
             )
         ) ?: error("Expected home-card update to return a card")
 
         assertEquals(created.createdAt, updated.createdAt)
-        assertNotEquals(4102444800000L, updated.createdAt)
-        assertNotEquals(946684800000L, updated.updatedAt)
         assertTrue(updated.updatedAt >= created.updatedAt)
     }
 

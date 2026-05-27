@@ -4,7 +4,7 @@
   "category": "TASKS",
   "checklist": [],
   "deadlineMillis": 1893456000000,
-  "isRepeating": true,
+  "repeatRule": "WEEKLY",
   "coinCount": 3,
   "isCompleted": true
 }

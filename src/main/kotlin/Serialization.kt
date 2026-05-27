@@ -14,6 +14,7 @@ import org.slf4j.event.*
 
 val ApiJson = Json {
     ignoreUnknownKeys = false
+    encodeDefaults = true
 }
 
 // Настраивает выбранную подсистему приложения.

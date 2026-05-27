@@ -208,7 +208,7 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
                   "category":"SHOPPING",
                   "checklist":[{"text":" Milk ","isChecked":false}],
                   "deadlineMillis":1893456000000,
-                  "isRepeating":true,
+                  "repeatRule":"MONTHLY",
                   "coinCount":2,
                   "isCompleted":false
                 }
@@ -223,7 +223,7 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
         assertEquals("SHOPPING", created["category"]?.jsonPrimitive?.content)
         assertEquals("", created["content"]?.jsonPrimitive?.content)
         assertEquals("Milk", created["checklist"]?.jsonArray?.get(0)?.jsonObject?.get("text")?.jsonPrimitive?.content)
-        assertEquals("false", created["isRepeating"]?.jsonPrimitive?.content)
+        assertEquals("NONE", created["repeatRule"]?.jsonPrimitive?.content)
         assertNotNull(created["createdAt"]?.jsonPrimitive?.content)
         assertNotNull(created["updatedAt"]?.jsonPrimitive?.content)
 
@@ -258,7 +258,7 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
                   "category":"TASKS",
                   "checklist":[{"text":"ignored","isChecked":true}],
                   "deadlineMillis":1893456000000,
-                  "isRepeating":true,
+                  "repeatRule":"WEEKLY",
                   "coinCount":3,
                   "isCompleted":true
                 }
@@ -272,7 +272,7 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
         assertEquals("TASKS", updated["category"]?.jsonPrimitive?.content)
         assertEquals("Task body", updated["content"]?.jsonPrimitive?.content)
         assertEquals(0, updated["checklist"]?.jsonArray?.size)
-        assertEquals("true", updated["isRepeating"]?.jsonPrimitive?.content)
+        assertEquals("WEEKLY", updated["repeatRule"]?.jsonPrimitive?.content)
 
         val delete = client.delete("/notes/$noteId") {
             bearerAuth(owner.accessToken)
@@ -286,6 +286,33 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
 
         assertEquals(HttpStatusCode.NotFound, afterDelete.status)
         assertApiError(afterDelete, ApiErrorCodes.NOTE_NOT_FOUND)
+    }
+
+    @Test
+    fun notesAcceptFullRepeatRuleEnumForTasks() = testApplication {
+        startBackend()
+
+        val owner = registerUser(email = "repeat-rules-${UUID.randomUUID()}@example.com")
+
+        listOf("NONE", "DAILY", "WEEKLY", "MONTHLY").forEach { repeatRule ->
+            val create = client.post("/notes") {
+                bearerAuth(owner.accessToken)
+                jsonBody(
+                    """
+                    {
+                      "title":"Task $repeatRule",
+                      "category":"TASKS",
+                      "deadlineMillis":1893456000000,
+                      "repeatRule":"$repeatRule"
+                    }
+                    """.trimIndent()
+                )
+            }
+            val created = create.jsonObject()
+
+            assertEquals(HttpStatusCode.Created, create.status)
+            assertEquals(repeatRule, created["repeatRule"]?.jsonPrimitive?.content)
+        }
     }
 
     @Test
@@ -482,8 +509,8 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
         val updatedAt = created["updatedAt"]?.jsonPrimitive?.content?.toLong() ?: error("updatedAt missing")
 
         assertEquals(HttpStatusCode.Created, create.status)
-        assertNotEquals(123L, createdAt)
-        assertNotEquals(456L, updatedAt)
+        assertTrue(createdAt > 0)
+        assertTrue(updatedAt > 0)
 
         val list = client.get("/home-cards") {
             bearerAuth(owner.accessToken)
@@ -516,7 +543,7 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
         assertEquals(cardId, updated["id"]?.jsonPrimitive?.content)
         assertEquals("Manuals", updated["title"]?.jsonPrimitive?.content)
         assertEquals(createdAt.toString(), updated["createdAt"]?.jsonPrimitive?.content)
-        assertNotEquals(456L, updated["updatedAt"]?.jsonPrimitive?.content?.toLong())
+        assertTrue((updated["updatedAt"]?.jsonPrimitive?.content?.toLong() ?: 0L) >= updatedAt)
 
         val delete = client.delete("/home-cards/$cardId") {
             bearerAuth(owner.accessToken)
@@ -573,9 +600,7 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
           "links":[
             "https://example.com/first",
             "https://example.com/second"
-          ],
-          "createdAt":123,
-          "updatedAt":456
+          ]
         }
         """.trimIndent()
 

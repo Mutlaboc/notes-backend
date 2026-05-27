@@ -10,7 +10,7 @@
     }
   ],
   "deadlineMillis": 1893456000000,
-  "isRepeating": false,
+  "repeatRule": "NONE",
   "coinCount": 2,
   "isCompleted": false,
   "createdAt": 1710000000000,

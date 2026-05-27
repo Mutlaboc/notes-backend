@@ -39,7 +39,8 @@ object BackendTestDatabase {
             "db.maxLifetimeMs" to "1800000",
             "db.autoCommit" to "false",
             "flyway.enabled" to "true",
-            "flyway.locations" to "classpath:db/migration",
+            "flyway.locations.size" to "1",
+            "flyway.locations.0" to "classpath:db/migration",
             "flyway.validateMigrationNaming" to "true"
         )
 

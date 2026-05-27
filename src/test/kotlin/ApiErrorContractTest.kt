@@ -209,7 +209,25 @@ class ApiErrorContractTest {
     }
 
     @Test
-    fun unknownHomeCardFieldReturnsUnifiedSchema() = testApplication {
+    fun legacyIsRepeatingNoteFieldReturnsUnifiedSchema() = testApplication {
+        val jwtConfig = testJwtConfig()
+
+        application {
+            installContractRoutes(jwtConfig)
+        }
+
+        val response = client.post("/notes") {
+            bearerAuth(testToken(jwtConfig))
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody("""{"title":"Note","category":"TASKS","isRepeating":true}""")
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertApiError(response, ApiErrorCodes.INVALID_REQUEST)
+    }
+
+    @Test
+    fun legacyHomeCardTimestampFieldsReturnUnifiedSchema() = testApplication {
         val jwtConfig = testJwtConfig()
 
         application {
@@ -228,8 +246,7 @@ class ApiErrorContractTest {
                   "note":"",
                   "links":[],
                   "createdAt":123,
-                  "updatedAt":456,
-                  "unexpected":"value"
+                  "updatedAt":456
                 }
                 """.trimIndent()
             )

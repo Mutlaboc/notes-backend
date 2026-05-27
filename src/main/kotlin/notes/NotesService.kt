@@ -46,7 +46,7 @@ open class NotesService(
                 )
             },
             deadlineMillis = deadlineMillis,
-            isRepeating = isRepeating,
+            repeatRule = repeatRule,
             coinCount = coinCount,
             isCompleted = isCompleted,
             createdAt = createdAt,
