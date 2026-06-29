@@ -1,4 +1,6 @@
 .gradle
+.gradle-codex/
+.tools/
 .kotlin/
 build/
 local.properties
