@@ -20,6 +20,7 @@ import com.example.mutlabocnotes.auth.authRoutes
 import com.example.mutlabocnotes.auth.configureJwtAuthentication
 import com.example.mutlabocnotes.auth.readJwtConfig
 import com.example.mutlabocnotes.auth.readSocialAuthConfig
+import com.example.mutlabocnotes.character.characterRoutes
 import com.example.mutlabocnotes.database.DatabaseFactory
 import com.example.mutlabocnotes.homecards.homeCardsRoutes
 import com.example.mutlabocnotes.notes.NotesRepository
@@ -138,6 +139,8 @@ fun Application.module() {
         )
 
         homeCardsRoutes()
+
+        characterRoutes()
     }
 }
 
