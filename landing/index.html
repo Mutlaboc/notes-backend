@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HomeNote — заметки и домашние дела как игра</title>
+<meta name="description" content="HomeNote — уютное приложение для заметок, задач, чек-листов и домашних карточек. Игровые механики превращают рутину в приключение: выполняйте дела, качайте персонажа Мутлабока, открывайте уровни.">
+<meta property="og:title" content="HomeNote — домашние дела как уютная игра">
+<meta property="og:description" content="Заметки, задачи и карточки по дому + геймификация: XP, уровни, монеты и прокачка персонажа.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://homenoteapp.ru/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Палитра из приложения (CozyAuth) */
+    --cream:#F4ECD8;
+    --card:#FBF5E6;
+    --field:#FFFDF6;
+    --ink:#5A3E25;
+    --ink-soft:#7A5A3A;
+    --hint:#AA936F;
+    --outline:#6E4A2A;
+    --shadow:#CBB58C;
+    --terra:#C96E3E;
+    --terra-dark:#7A3F1E;
+    --terra-shadow:#9E5125;
+    --divider:#D8C5A0;
+    --yellow:#E8C45A;
+    --green:#7FB04A;
+    --on-accent:#FFF6EC;
+    --maxw:1080px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  img{image-rendering:pixelated;image-rendering:crisp-edges}
+  body{
+    font-family:"VT323",monospace;
+    background:var(--cream);
+    color:var(--ink);
+    font-size:21px;
+    line-height:1.35;
+    overflow-x:hidden;
+    background-image:
+      linear-gradient(rgba(110,74,42,.04) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(110,74,42,.04) 1px,transparent 1px);
+    background-size:14px 14px;
+  }
+  .px{font-family:"Press Start 2P",monospace}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+  h1,h2,h3{line-height:1.15}
+
+  /* Pixel button */
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;cursor:pointer;
+    font-family:"Press Start 2P",monospace;font-size:12px;
+    padding:15px 22px;color:var(--on-accent);
+    background:var(--terra);
+    border:3px solid var(--terra-dark);
+    box-shadow:5px 5px 0 0 var(--terra-shadow);
+    transition:transform .07s steps(2),box-shadow .07s steps(2);
+  }
+  .btn:active{transform:translate(3px,3px);box-shadow:2px 2px 0 0 var(--terra-shadow)}
+  .btn.green{background:var(--green);border-color:#4e7a26;box-shadow:5px 5px 0 0 #4e7a26}
+  .btn.ghost{background:var(--field);color:var(--ink);border-color:var(--outline);box-shadow:5px 5px 0 0 var(--shadow)}
+  .btn[disabled]{cursor:not-allowed;filter:saturate(.7) brightness(1.02)}
+  .btn.small{font-size:10px;padding:11px 16px;box-shadow:4px 4px 0 0 var(--terra-shadow)}
+
+  /* Pixel panel/card */
+  .panel{
+    background:var(--card);
+    border:3px solid var(--outline);
+    box-shadow:6px 6px 0 0 var(--shadow);
+    border-radius:2px;
+  }
+
+  /* Header */
+  header{position:sticky;top:0;z-index:50;
+    background:var(--cream);border-bottom:3px solid var(--outline)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:70px;gap:14px}
+  .logo{display:flex;align-items:center;gap:10px;font-family:"Press Start 2P",monospace;font-size:15px;color:var(--ink)}
+  .logo .mk{width:34px;height:34px;display:grid;place-items:center;font-size:20px;
+    background:var(--terra);border:3px solid var(--terra-dark);box-shadow:3px 3px 0 0 var(--terra-shadow)}
+  .nav-links{display:flex;gap:26px;align-items:center}
+  .nav-links a{color:var(--ink-soft);font-size:20px;border-bottom:2px solid transparent}
+  .nav-links a:hover{color:var(--ink);border-bottom-color:var(--terra)}
+  @media(max-width:760px){.nav-links{display:none}}
+
+  /* Hero */
+  .hero{position:relative;padding:70px 0 40px;overflow:hidden}
+  .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center}
+  @media(max-width:860px){.hero-grid{grid-template-columns:1fr;text-align:center}}
+  .badge{display:inline-flex;align-items:center;gap:9px;padding:9px 14px;
+    background:var(--field);border:3px solid var(--outline);box-shadow:4px 4px 0 0 var(--shadow);
+    font-family:"Press Start 2P",monospace;font-size:9px;color:var(--ink-soft);margin-bottom:24px}
+  .badge .dot{width:10px;height:10px;background:var(--green);box-shadow:0 0 0 2px #4e7a26}
+  h1{font-family:"Press Start 2P",monospace;font-size:clamp(20px,3.6vw,30px);
+    color:var(--ink);margin-bottom:22px}
+  h1 .ac{color:var(--terra)}
+  .lead{font-size:24px;color:var(--ink-soft);max-width:520px;margin-bottom:28px}
+  @media(max-width:860px){.lead{margin:0 auto 28px}}
+  .cta-row{display:flex;gap:16px;flex-wrap:wrap}
+  @media(max-width:860px){.cta-row{justify-content:center}}
+  .cta-note{margin-top:16px;color:var(--hint);font-size:20px}
+
+  .hero-art{position:relative;display:grid;place-items:end center;min-height:380px}
+  .hero-house{width:min(100%,420px);filter:drop-shadow(8px 10px 0 rgba(90,62,37,.18))}
+  .hero-mascot{position:absolute;bottom:-6px;right:4%;width:120px;
+    filter:drop-shadow(5px 6px 0 rgba(90,62,37,.22));animation:bob 2.4s steps(2) infinite}
+  @media(max-width:860px){.hero-mascot{right:8%}}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+
+  /* Section heads */
+  section{padding:64px 0}
+  .sec-head{text-align:center;max-width:640px;margin:0 auto 44px}
+  .eyebrow{font-family:"Press Start 2P",monospace;font-size:10px;color:var(--terra);
+    letter-spacing:1px;margin-bottom:16px}
+  .sec-head h2{font-family:"Press Start 2P",monospace;font-size:clamp(16px,2.6vw,22px);color:var(--ink);margin-bottom:16px}
+  .sec-head p{font-size:23px;color:var(--ink-soft)}
+
+  /* Features */
+  .features{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  @media(max-width:860px){.features{grid-template-columns:1fr}}
+  .feature{padding:26px 22px;transition:transform .1s steps(2)}
+  .feature:hover{transform:translate(-2px,-2px)}
+  .f-ico{width:54px;height:54px;display:grid;place-items:center;font-size:26px;margin-bottom:16px;
+    background:var(--field);border:3px solid var(--outline);box-shadow:3px 3px 0 0 var(--shadow)}
+  .feature h3{font-family:"Press Start 2P",monospace;font-size:12px;color:var(--ink);margin-bottom:12px;line-height:1.5}
+  .feature p{font-size:21px;color:var(--ink-soft)}
+
+  /* Gamification */
+  .game{background:var(--card);border-top:3px solid var(--outline);border-bottom:3px solid var(--outline)}
+  .game-grid{display:grid;grid-template-columns:0.95fr 1.05fr;gap:40px;align-items:center}
+  @media(max-width:860px){.game-grid{grid-template-columns:1fr}}
+  .game-copy h2{font-family:"Press Start 2P",monospace;font-size:clamp(16px,2.6vw,22px);color:var(--ink);margin-bottom:18px;line-height:1.3}
+  .game-copy p{font-size:23px;color:var(--ink-soft);margin-bottom:16px}
+  .game-copy strong{color:var(--terra)}
+
+  /* Character card mock */
+  .char{padding:20px}
+  .char-top{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+  .char-portrait{width:96px;height:96px;flex:none;background:var(--field);
+    border:3px solid var(--outline);box-shadow:4px 4px 0 0 var(--shadow);display:grid;place-items:end center;overflow:hidden}
+  .char-portrait img{width:78px;margin-bottom:-2px}
+  .char-name{font-family:"Press Start 2P",monospace;font-size:15px;color:var(--ink);margin-bottom:10px}
+  .lvl{display:inline-block;font-family:"Press Start 2P",monospace;font-size:10px;color:var(--on-accent);
+    background:var(--terra);border:2px solid var(--terra-dark);padding:6px 10px}
+  .xp-row{display:flex;justify-content:space-between;font-size:18px;color:var(--ink-soft);margin:6px 2px}
+  .bar{height:18px;background:var(--field);border:2px solid var(--outline);padding:2px}
+  .bar > i{display:block;height:100%;background:var(--terra)}
+  .bar.g > i{background:var(--green)}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
+  .stat{background:var(--field);border:3px solid var(--outline);box-shadow:3px 3px 0 0 var(--shadow);
+    padding:10px 6px;text-align:center}
+  .stat .n{font-size:16px;color:var(--ink-soft);display:block}
+  .stat .v{font-family:"Press Start 2P",monospace;font-size:14px;color:var(--ink);display:block;margin:6px 0 2px}
+  .stat .m{font-size:16px;color:var(--terra)}
+  .skill{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .skill .sn{font-size:19px;color:var(--ink);width:120px;flex:none}
+  .coin{display:inline-block;width:16px;height:16px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#f6dc7a,var(--yellow) 60%,#b8902f);
+    border:2px solid #8a6a1e;vertical-align:-3px}
+
+  /* Steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  @media(max-width:860px){.steps{grid-template-columns:1fr}}
+  .step{padding:24px;position:relative}
+  .step .num{font-family:"Press Start 2P",monospace;font-size:14px;color:var(--on-accent);
+    width:46px;height:46px;display:grid;place-items:center;margin-bottom:16px;
+    background:var(--terra);border:3px solid var(--terra-dark);box-shadow:3px 3px 0 0 var(--terra-shadow)}
+  .step h3{font-family:"Press Start 2P",monospace;font-size:11px;color:var(--ink);margin-bottom:12px;line-height:1.5}
+  .step p{font-size:21px;color:var(--ink-soft)}
+
+  /* CTA band */
+  .cta-band{text-align:center}
+  .cta-card{padding:54px 28px;text-align:center}
+  .cta-card h2{font-family:"Press Start 2P",monospace;font-size:clamp(15px,2.4vw,20px);color:var(--ink);margin-bottom:18px;line-height:1.4}
+  .cta-card p{font-size:23px;color:var(--ink-soft);max-width:520px;margin:0 auto 26px}
+
+  /* Scenery + footer */
+  .scenery{position:relative;height:120px;margin-top:30px;
+    border-top:3px solid var(--outline);background:linear-gradient(var(--green),#6a9a3c)}
+  .scenery img{position:absolute;bottom:0;image-rendering:pixelated}
+  .scenery .fence{left:0;width:100%;height:64px;object-fit:cover;object-position:bottom;opacity:.95}
+  .scenery .mascot{left:6%;width:74px;bottom:8px;z-index:2}
+  .scenery .bush{right:8%;width:120px;bottom:4px}
+  .scenery .mailbox{left:34%;width:54px;bottom:6px}
+  .scenery .fp{right:26%;width:40px;bottom:6px}
+  .scenery .fw{left:22%;width:38px;bottom:6px}
+  @media(max-width:680px){.scenery .mailbox,.scenery .fp,.scenery .fw{display:none}}
+  footer{background:#6a9a3c;color:#f3f7e9;padding:30px 0 36px}
+  .foot{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;font-size:19px}
+  .foot a{color:#f3f7e9;border-bottom:2px solid transparent}
+  .foot a:hover{border-bottom-color:#fff}
+  .foot .logo{color:#fff}
+  .foot-links{display:flex;gap:22px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo"><span class="mk">🏠</span> HomeNote</div>
+    <nav class="nav-links">
+      <a href="#features">Возможности</a>
+      <a href="#game">Геймификация</a>
+      <a href="#how">Как начать</a>
+    </nav>
+    <a class="btn small" href="#download">Установить</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="badge"><span class="dot"></span> Скоро в RuStore</span>
+      <h1>Домашние дела — <span class="ac">как уютная игра</span></h1>
+      <p class="lead">HomeNote хранит заметки, задачи, чек-листы и карточки по дому. А игровые механики превращают обязательное в интересное: выполняйте дела и прокачивайте своего героя.</p>
+      <div class="cta-row">
+        <button class="btn" id="storeBtn" disabled>▸ Скоро в RuStore</button>
+        <a class="btn ghost" href="#game">Как это работает</a>
+      </div>
+      <p class="cta-note">Бесплатно · вход по email или через Яндекс</p>
+    </div>
+    <div class="hero-art">
+      <img class="hero-house" src="assets/house.png" alt="Пиксельный домик HomeNote">
+      <img class="hero-mascot" src="assets/mascot.png" alt="Мутлабок — герой приложения">
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">ВОЗМОЖНОСТИ</div>
+      <h2>Всё для домашнего порядка</h2>
+      <p>Заметки, дела и информация о доме — без хаоса в десятке приложений.</p>
+    </div>
+    <div class="features">
+      <div class="feature panel">
+        <div class="f-ico">📝</div>
+        <h3>Заметки</h3>
+        <p>Быстро записывайте мысли и важное. Находите нужное за секунды.</p>
+      </div>
+      <div class="feature panel">
+        <div class="f-ico">✅</div>
+        <h3>Задачи и чек-листы</h3>
+        <p>Списки дел и покупок с отметками. Отмечайте выполненное — и получайте награду.</p>
+      </div>
+      <div class="feature panel">
+        <div class="f-ico">🏠</div>
+        <h3>Домашние карточки</h3>
+        <p>Техника, счётчики, контакты мастеров, пароли и даты ТО — в удобных карточках.</p>
+      </div>
+      <div class="feature panel">
+        <div class="f-ico">🔄</div>
+        <h3>Синхронизация</h3>
+        <p>Данные на сервере и на ваших устройствах. Сменили телефон — всё на месте.</p>
+      </div>
+      <div class="feature panel">
+        <div class="f-ico">🔐</div>
+        <h3>Безопасный вход</h3>
+        <p>Регистрация по email или вход через Яндекс. Данные привязаны к аккаунту.</p>
+      </div>
+      <div class="feature panel">
+        <div class="f-ico">🎮</div>
+        <h3>Геймификация</h3>
+        <p>Рутина превращается в приключение: XP, уровни, монеты и прокачка героя.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GAMIFICATION -->
+<div class="game">
+  <section id="game">
+    <div class="wrap game-grid">
+      <div class="game-copy">
+        <div class="eyebrow">ГЕЙМИФИКАЦИЯ</div>
+        <h2>Превращаем обязательное в интересное</h2>
+        <p>Бытовые дела редко вдохновляют. HomeNote добавляет к ним игровой слой: за каждую выполненную задачу вы получаете <strong>опыт (XP)</strong> и <strong>монеты</strong>.</p>
+        <p>Опыт поднимает <strong>уровень</strong> вашего героя — Мутлабока, а монеты тратятся на прокачку <strong>характеристик</strong> (Сила, Ловкость, Интеллект…) и <strong>навыков</strong> (Лесоруб, Плотник, Архивариус).</p>
+        <p>Маленькая победа на экране — и помыть посуду уже не так скучно. Привычки складываются в прогресс, который видно.</p>
+      </div>
+
+      <!-- Character card mock -->
+      <div class="char panel">
+        <div class="char-top">
+          <div class="char-portrait"><img src="assets/mascot.png" alt="Портрет Мутлабока"></div>
+          <div>
+            <div class="char-name">Мутлабок</div>
+            <span class="lvl">УР. 7</span>
+          </div>
+        </div>
+        <div class="xp-row"><span>Опыт</span><span>640 / 800 XP</span></div>
+        <div class="bar"><i style="width:80%"></i></div>
+
+        <div class="stats">
+          <div class="stat"><span class="n">Сила</span><span class="v">12</span><span class="m">+1</span></div>
+          <div class="stat"><span class="n">Ловкость</span><span class="v">10</span><span class="m">+0</span></div>
+          <div class="stat"><span class="n">Телосл.</span><span class="v">11</span><span class="m">+0</span></div>
+          <div class="stat"><span class="n">Интеллект</span><span class="v">14</span><span class="m">+2</span></div>
+          <div class="stat"><span class="n">Мудрость</span><span class="v">13</span><span class="m">+1</span></div>
+          <div class="stat"><span class="n">Харизма</span><span class="v">9</span><span class="m">−1</span></div>
+        </div>
+
+        <div class="skill"><span class="sn">Лесоруб · ур.4</span><span class="bar g" style="flex:1"><i style="width:65%"></i></span></div>
+        <div class="skill"><span class="sn">Плотник · ур.3</span><span class="bar g" style="flex:1"><i style="width:40%"></i></span></div>
+        <div class="skill"><span class="sn">Архивариус · ур.5</span><span class="bar g" style="flex:1"><i style="width:85%"></i></span></div>
+
+        <div style="margin-top:16px;font-size:19px;color:var(--ink-soft)">
+          В кошельке: <span class="coin"></span> 248 монет — хватит на пару апгрейдов
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- HOW -->
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">КАК НАЧАТЬ</div>
+      <h2>Три простых шага</h2>
+    </div>
+    <div class="steps">
+      <div class="step panel">
+        <div class="num">1</div>
+        <h3>Установите HomeNote</h3>
+        <p>Скачайте приложение из RuStore и создайте аккаунт за минуту.</p>
+      </div>
+      <div class="step panel">
+        <div class="num">2</div>
+        <h3>Добавьте дела и карточки</h3>
+        <p>Перенесите списки, задачи и важную информацию о доме в приложение.</p>
+      </div>
+      <div class="step panel">
+        <div class="num">3</div>
+        <h3>Выполняйте и качайтесь</h3>
+        <p>Закрывайте задачи, получайте опыт и монеты, прокачивайте Мутлабока.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="download" class="cta-band">
+  <div class="wrap">
+    <div class="cta-card panel">
+      <h2>Наведите порядок — и получите от этого удовольствие</h2>
+      <p>HomeNote скоро появится в RuStore. Ссылка на установку будет здесь.</p>
+      <button class="btn" disabled>▸ Скоро в RuStore</button>
+    </div>
+  </div>
+</section>
+
+<!-- SCENERY -->
+<div class="scenery">
+  <img class="fence" src="assets/fence.png" alt="">
+  <img class="fw" src="assets/flower_white.png" alt="">
+  <img class="mailbox" src="assets/mailbox.png" alt="">
+  <img class="fp" src="assets/flower_pink.png" alt="">
+  <img class="bush" src="assets/bush.png" alt="">
+  <img class="mascot" src="assets/mascot.png" alt="">
+</div>
+
+<footer>
+  <div class="wrap foot">
+    <div class="logo px" style="font-size:13px">🏠 HomeNote</div>
+    <div class="foot-links">
+      <a href="#features">Возможности</a>
+      <a href="#game">Геймификация</a>
+      <a href="mailto:yurik.dom@gmail.com">Связаться</a>
+    </div>
+    <div>© <span id="year">2026</span> HomeNote</div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+  // Когда приложение выйдет в RuStore — впишите ссылку и раскомментируйте:
+  // var RUSTORE_URL = "https://www.rustore.ru/catalog/app/ВАШ_ПАКЕТ";
+  // document.querySelectorAll('.btn[disabled]').forEach(function(b){
+  //   b.disabled = false; b.textContent = "▸ Скачать в RuStore";
+  //   b.onclick = function(){ window.location.href = RUSTORE_URL; };
+  // });
+</script>
+</body>
+</html>
