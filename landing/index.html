@@ -197,6 +197,11 @@
   .foot a:hover{border-bottom-color:#fff}
   .foot .logo{color:#fff}
   .foot-links{display:flex;gap:22px;flex-wrap:wrap}
+  .legal-links a{border-bottom:2px solid transparent}
+  .legal-links a:hover{border-bottom-color:#fff}
+  .cta-legal{margin-top:18px;font-size:19px;color:var(--ink-soft)}
+  .cta-legal a{color:var(--terra);border-bottom:2px solid var(--terra)}
+  .cta-legal a.muted{color:var(--ink-soft);border-bottom-color:var(--divider)}
 </style>
 </head>
 <body>
@@ -355,6 +360,11 @@
       <h2>Наведите порядок — и получите от этого удовольствие</h2>
       <p>HomeNote скоро появится в RuStore. Ссылка на установку будет здесь.</p>
       <button class="btn" disabled>▸ Скоро в RuStore</button>
+      <p class="cta-legal">
+        <a href="/legal/privacy.html">Политика конфиденциальности</a>
+        &nbsp;·&nbsp;
+        <a class="muted" href="/legal/account-deletion.html">Удалить аккаунт</a>
+      </p>
     </div>
   </div>
 </section>
@@ -370,14 +380,25 @@
 </div>
 
 <footer>
-  <div class="wrap foot">
-    <div class="logo px" style="font-size:13px">🏠 HomeNote</div>
-    <div class="foot-links">
-      <a href="#features">Возможности</a>
-      <a href="#game">Геймификация</a>
-      <a href="mailto:yurik.dom@gmail.com">Связаться</a>
+  <div class="wrap">
+    <div class="foot">
+      <div class="logo px" style="font-size:13px">🏠 HomeNote</div>
+      <div class="foot-links">
+        <a href="#features">Возможности</a>
+        <a href="#game">Геймификация</a>
+        <a href="mailto:homenotessupp@yandex.ru">Связаться</a>
+      </div>
+      <div>© <span id="year">2026</span> HomeNote</div>
     </div>
-    <div>© <span id="year">2026</span> HomeNote</div>
+    <nav class="legal-links" aria-label="Юридические документы"
+         style="margin-top:18px; display:flex; flex-wrap:wrap; gap:16px;
+                justify-content:center; font-size:18px; opacity:.9;">
+      <a href="/legal/privacy.html"          style="color:inherit; text-decoration:none;">Политика конфиденциальности</a>
+      <a href="/legal/terms.html"            style="color:inherit; text-decoration:none;">Пользовательское соглашение</a>
+      <a href="/legal/account-deletion.html" style="color:inherit; text-decoration:none;">Удаление аккаунта</a>
+      <a href="/legal/data-collected.html"   style="color:inherit; text-decoration:none;">Собираемые данные</a>
+      <a href="/legal/support.html"          style="color:inherit; text-decoration:none;">Поддержка</a>
+    </nav>
   </div>
 </footer>
 

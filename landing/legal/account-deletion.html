@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="index, follow">
+<title>Удаление аккаунта — HomeNote</title>
+<meta name="description" content="Удаление аккаунта приложения HomeNote / Mutlaboc Notes.">
+<style>
+  :root {
+    --bg:#f6f1e7; --card:#fffdf8; --ink:#2c2a26; --muted:#6b6459;
+    --accent:#4c8a5a; --accent-dark:#3a6b46; --line:#e6ddcb;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    line-height:1.65; font-size:16px;
+  }
+  header.top {
+    background:var(--accent-dark); color:#fff; padding:14px 20px;
+  }
+  header.top .wrap {
+    max-width:860px; margin:0 auto; display:flex; align-items:center;
+    justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  header.top a.home { color:#fff; text-decoration:none; font-weight:700; font-size:18px; }
+  nav.docs { background:var(--accent); }
+  nav.docs .wrap {
+    max-width:860px; margin:0 auto; padding:8px 20px;
+    display:flex; gap:18px; flex-wrap:wrap;
+  }
+  nav.docs a { color:#eef7f0; text-decoration:none; font-size:14px; opacity:.92; }
+  nav.docs a:hover { text-decoration:underline; opacity:1; }
+  main {
+    max-width:860px; margin:28px auto; padding:0 20px 60px;
+  }
+  article {
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:34px 38px; box-shadow:0 6px 20px rgba(60,50,30,.06);
+  }
+  h1 { font-size:28px; margin:0 0 4px; color:var(--accent-dark); }
+  h2 { font-size:20px; margin:30px 0 10px; color:var(--ink);
+       border-bottom:2px solid var(--line); padding-bottom:6px; }
+  h3 { font-size:17px; margin:20px 0 6px; color:var(--accent-dark); }
+  p, li { color:var(--ink); }
+  a { color:var(--accent-dark); }
+  blockquote {
+    border-left:4px solid var(--accent); background:#f0f6f1;
+    margin:16px 0; padding:10px 16px; border-radius:0 8px 8px 0; color:var(--muted);
+  }
+  code, pre {
+    background:#f1ece0; border:1px solid var(--line); border-radius:6px;
+    padding:2px 6px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:14px;
+  }
+  pre { padding:12px; overflow:auto; }
+  table { border-collapse:collapse; width:100%; margin:14px 0; }
+  th, td { border:1px solid var(--line); padding:8px 10px; text-align:left; }
+  th { background:#f0f6f1; }
+  footer {
+    max-width:860px; margin:0 auto; padding:24px 20px 50px;
+    color:var(--muted); font-size:13px; text-align:center;
+  }
+  footer a { color:var(--accent-dark); }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="home" href="https://homenoteapp.ru/">🏠 HomeNote</a>
+    <span style="font-size:13px;opacity:.85">Юридические документы</span>
+  </div>
+</header>
+<nav class="docs"><div class="wrap"><a href="privacy.html">Политика конфиденциальности</a><a href="terms.html">Пользовательское соглашение</a><a href="account-deletion.html">Удаление аккаунта</a><a href="data-collected.html">Собираемые данные</a><a href="support.html">Поддержка</a></div></nav>
+<main>
+  <article>
+  <h1>Удаление аккаунта и данных в HomeNotes / Mutlaboc Notes</h1>
+<p>Редакция от 30 июня 2026 года.</p>
+<blockquote>
+<p>Если в приложении появится встроенная кнопка удаления аккаунта, добавьте точный путь в интерфейсе.</p>
+</blockquote>
+<h2>1. Что можно удалить</h2>
+<p>Пользователь может запросить удаление аккаунта <strong>HomeNotes / Mutlaboc Notes</strong> и связанных с ним пользовательских данных.</p>
+<p>При удалении аккаунта удаляются или обезличиваются следующие данные, если их дальнейшее хранение не требуется по закону:</p>
+<ul>
+<li>email аккаунта;</li>
+<li>данные авторизации, связанные с аккаунтом;</li>
+<li>серверные сессии;</li>
+<li>заметки;</li>
+<li>чек-листы и пункты чек-листов;</li>
+<li>статусы выполнения задач;</li>
+<li>дедлайны и правила повтора;</li>
+<li>домашние информационные карточки;</li>
+<li>поля и значения домашних карточек;</li>
+<li>ссылки, добавленные пользователем;</li>
+<li>пользовательские настройки, если они связаны с аккаунтом на сервере.</li>
+</ul>
+<h2>2. Удаление приложения с устройства</h2>
+<p>Удаление приложения с устройства не всегда удаляет серверный аккаунт и данные на backend-сервере.</p>
+<p>Чтобы удалить серверный аккаунт и связанные данные, нужно направить отдельный запрос на удаление аккаунта.</p>
+<h2>3. Как запросить удаление аккаунта</h2>
+<p>До появления встроенной функции удаления аккаунта в Приложении запрос направляется в поддержку.</p>
+<p>Напишите письмо на <strong>homenotessupp@yandex.ru</strong> с темой:</p>
+<pre><code class="language-text">Удаление аккаунта HomeNotes
+</code></pre>
+<p>В письме укажите:</p>
+<ul>
+<li>email аккаунта, который нужно удалить;</li>
+<li>фразу: <code>Прошу удалить мой аккаунт HomeNotes / Mutlaboc Notes и связанные пользовательские данные</code>;</li>
+<li>дополнительную информацию для подтверждения принадлежности аккаунта, если поддержка ее запросит.</li>
+</ul>
+<p>Рекомендуется отправлять запрос с email-адреса, который используется для входа в аккаунт.</p>
+<h2>4. Проверка запроса</h2>
+<p>Оператор может проверить, что запрос направлен владельцем аккаунта. Это нужно, чтобы предотвратить удаление данных другим лицом.</p>
+<p>Для проверки может использоваться email аккаунта, ответное письмо или иные разумные способы подтверждения принадлежности аккаунта.</p>
+<p>Не отправляйте в поддержку пароль или секретные технические данные авторизации.</p>
+<h2>5. Срок удаления</h2>
+<p>Обычный срок обработки запроса на удаление аккаунта: <strong>до 10 календарных дней</strong> после подтверждения принадлежности аккаунта.</p>
+<p>Срок может быть увеличен, если это необходимо для выполнения закона, расследования инцидента безопасности, предотвращения злоупотреблений, обработки резервных копий или технических журналов.</p>
+<h2>6. Что может временно сохраниться</h2>
+<p>После удаления аккаунта часть технических данных может временно сохраняться в ограниченном виде:</p>
+<ul>
+<li>записи серверных журналов;</li>
+<li>резервные копии до окончания цикла их хранения;</li>
+<li>сведения, необходимые для подтверждения факта обработки запроса;</li>
+<li>данные, которые оператор обязан хранить по закону.</li>
+</ul>
+<p>Такие данные не используются для обычного предоставления функций Приложения и удаляются или обезличиваются после окончания применимого срока хранения.</p>
+<h2>7. Можно ли восстановить аккаунт</h2>
+<p>Удаление аккаунта может быть необратимым.</p>
+<p>После завершения удаления пользователь может потерять доступ ко всем заметкам, чек-листам, домашним карточкам, ссылкам, дедлайнам и связанным настройкам.</p>
+<p>Если пользователь хочет сохранить данные, он должен самостоятельно скопировать нужную информацию до подтверждения удаления.</p>
+<h2>8. Удаление отдельных данных без удаления аккаунта</h2>
+<p>Пользователь может самостоятельно удалить отдельные данные в Приложении, если соответствующая функция доступна:</p>
+<ul>
+<li>удалить заметку;</li>
+<li>удалить или изменить пункты чек-листа;</li>
+<li>изменить или убрать дедлайн;</li>
+<li>удалить домашнюю карточку;</li>
+<li>удалить ссылку из домашней карточки;</li>
+<li>выйти из аккаунта.</li>
+</ul>
+<p>Удаление отдельных записей в интерфейсе не всегда означает немедленное удаление всех технических копий в резервных копиях, но такие копии не используются для обычного отображения данных пользователю.</p>
+<h2>9. Отзыв согласия</h2>
+<p>Пользователь может отозвать согласие на обработку персональных данных, направив обращение на <strong>homenotessupp@yandex.ru</strong>.</p>
+<p>Отзыв согласия может привести к невозможности дальнейшего использования аккаунта и серверных функций Приложения.</p>
+<h2>10. Контакты</h2>
+<p>Email для запросов на удаление аккаунта и данных: <strong>homenotessupp@yandex.ru</strong></p>
+<p>Оператор: <strong>Чекрыгин Юрий Евгеньевич</strong></p>
+<p>Сайт / страница приложения: <strong>https://homenoteapp.ru/</strong></p>
+  </article>
+</main>
+<footer>
+  © 2026 HomeNote · Чекрыгин Юрий Евгеньевич ·
+  <a href="mailto:homenotessupp@yandex.ru">homenotessupp@yandex.ru</a> ·
+  <a href="https://homenoteapp.ru/">homenoteapp.ru</a>
+</footer>
+</body>
+</html>
