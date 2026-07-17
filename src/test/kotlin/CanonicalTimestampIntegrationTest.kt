@@ -35,7 +35,7 @@ class CanonicalTimestampIntegrationTest {
             request = CreateNoteRequestDto(
                 title = "Created note",
                 content = "Server timestamps",
-                category = NoteCategory.NOTES,
+            category = NoteCategory.TASKS,
                 coinCount = 3
             )
         )
@@ -48,7 +48,7 @@ class CanonicalTimestampIntegrationTest {
             request = UpdateNoteRequestDto(
                 title = "Updated note",
                 content = "Still canonical",
-                category = NoteCategory.NOTES,
+            category = NoteCategory.TASKS,
                 coinCount = 4
             )
         ) ?: error("Expected note update to return a note")

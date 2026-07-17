@@ -18,6 +18,8 @@ data class NoteResponseDto(
     val category: NoteCategory,
     val checklist: List<ChecklistItemDto>,
     val deadlineMillis: Long? = null,
+    val startAtMillis: Long? = null,
+    val durationMinutes: Long? = null,
     val repeatRule: RepeatRule = RepeatRule.NONE,
     val coinCount: Int = 0,
     val isCompleted: Boolean = false,
@@ -30,9 +32,11 @@ data class NoteResponseDto(
 data class CreateNoteRequestDto(
     val title: String = "",
     val content: String = "",
-    val category: NoteCategory = NoteCategory.NOTES,
+    val category: NoteCategory = NoteCategory.TASKS,
     val checklist: List<ChecklistItemDto> = emptyList(),
     val deadlineMillis: Long? = null,
+    val startAtMillis: Long? = null,
+    val durationMinutes: Long? = null,
     val repeatRule: RepeatRule = RepeatRule.NONE,
     val coinCount: Int = 0,
     val isCompleted: Boolean = false
@@ -43,9 +47,11 @@ data class CreateNoteRequestDto(
 data class UpdateNoteRequestDto(
     val title: String = "",
     val content: String = "",
-    val category: NoteCategory = NoteCategory.NOTES,
+    val category: NoteCategory = NoteCategory.TASKS,
     val checklist: List<ChecklistItemDto> = emptyList(),
     val deadlineMillis: Long? = null,
+    val startAtMillis: Long? = null,
+    val durationMinutes: Long? = null,
     val repeatRule: RepeatRule = RepeatRule.NONE,
     val coinCount: Int = 0,
     val isCompleted: Boolean = false
@@ -55,4 +61,10 @@ data class UpdateNoteRequestDto(
 @Serializable
 data class UpdateNoteCompletionRequestDto(
     val isCompleted: Boolean
+)
+
+@Serializable
+data class NoteCompletionResponseDto(
+    val completedNote: NoteResponseDto,
+    val nextNote: NoteResponseDto? = null
 )

@@ -16,6 +16,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
 import java.time.Instant
 import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import kotlin.uuid.Uuid
 
 // Репозиторий для доступа к данным и работы с БД.
@@ -93,8 +94,12 @@ class NotesRepository {
                 it[title] = request.title
                 it[content] = normalizedContent(request.category, request.content)
                 it[category] = request.category.name
-                it[deadlineAt] = request.deadlineMillis?.toOffsetDateTimeUtc()
+                it[deadlineAt] = normalizedDeadline(request.category, request.deadlineMillis)?.toOffsetDateTimeUtc()
+                it[startAt] = normalizedStart(request.category, request.startAtMillis)?.toOffsetDateTimeUtc()
+                it[durationMinutes] = normalizedDuration(request.category, request.durationMinutes)
                 it[repeatRule] = normalizedRepeatRule(request.category, request.repeatRule).name
+                it[recurrenceAnchorDay] = normalizedStart(request.category, request.startAtMillis)
+                    ?.let(::utcDayOfMonth)
                 it[coinCount] = request.coinCount
                 it[isCompleted] = request.isCompleted
             }
@@ -115,8 +120,12 @@ class NotesRepository {
                 it[title] = request.title
                 it[content] = normalizedContent(request.category, request.content)
                 it[category] = request.category.name
-                it[deadlineAt] = request.deadlineMillis?.toOffsetDateTimeUtc()
+                it[deadlineAt] = normalizedDeadline(request.category, request.deadlineMillis)?.toOffsetDateTimeUtc()
+                it[startAt] = normalizedStart(request.category, request.startAtMillis)?.toOffsetDateTimeUtc()
+                it[durationMinutes] = normalizedDuration(request.category, request.durationMinutes)
                 it[repeatRule] = normalizedRepeatRule(request.category, request.repeatRule).name
+                it[recurrenceAnchorDay] = normalizedStart(request.category, request.startAtMillis)
+                    ?.let(::utcDayOfMonth)
                 it[coinCount] = request.coinCount
                 it[isCompleted] = request.isCompleted
             }
@@ -143,16 +152,39 @@ class NotesRepository {
         }
 
     // Обновляет статус выполнения заметки.
-    suspend fun updateCompletion(userId: Uuid, noteId: Uuid, isCompleted: Boolean): NoteModel? {
-        val updated = DatabaseFactory.dbQuery {
-            NotesTable.update(
-                where = { (NotesTable.id eq noteId) and (NotesTable.userId eq userId) }
-            ) {
-                it[NotesTable.isCompleted] = isCompleted
-            } > 0
+    suspend fun updateCompletion(
+        userId: Uuid,
+        noteId: Uuid,
+        isCompleted: Boolean,
+        nowMillis: Long = System.currentTimeMillis()
+    ): Pair<NoteModel, NoteModel?>? = DatabaseFactory.dbQuery {
+        val currentRow = NotesTable.selectAll()
+            .where { (NotesTable.id eq noteId) and (NotesTable.userId eq userId) }
+            .singleOrNull() ?: return@dbQuery null
+
+        NotesTable.update(
+            where = { (NotesTable.id eq noteId) and (NotesTable.userId eq userId) }
+        ) { it[NotesTable.isCompleted] = isCompleted }
+
+        val nextId = if (isCompleted && currentRow[NotesTable.category] == NoteCategory.RECURRING_TASKS.name) {
+            NotesTable.selectAll()
+                .where { NotesTable.recurrenceParentId eq noteId }
+                .singleOrNull()
+                ?.get(NotesTable.id)
+                ?: createNextOccurrence(currentRow, noteId, nowMillis)
+        } else {
+            null
         }
 
-        return if (updated) getById(userId, noteId) else null
+        val completedChecklist = loadChecklist(noteId)
+        val completed = NotesTable.selectAll()
+            .where { NotesTable.id eq noteId }
+            .single()
+            .toNoteModel(completedChecklist)
+        val next = nextId?.let { id ->
+            NotesTable.selectAll().where { NotesTable.id eq id }.single().toNoteModel(emptyList())
+        }
+        completed to next
     }
 
     // Сохраняет позиции чеклиста для конкретной заметки.
@@ -185,7 +217,60 @@ class NotesRepository {
 
     // Выдаёт признак повторения только для задач.
     private fun normalizedRepeatRule(category: NoteCategory, repeatRule: RepeatRule): RepeatRule =
-        if (category == NoteCategory.TASKS) repeatRule else RepeatRule.NONE
+        if (category == NoteCategory.RECURRING_TASKS) {
+            require(repeatRule != RepeatRule.NONE) { "Recurring task requires repeat rule" }
+            repeatRule
+        } else RepeatRule.NONE
+
+    private fun normalizedDeadline(category: NoteCategory, deadlineMillis: Long?): Long? =
+        if (category == NoteCategory.TASKS) deadlineMillis else null
+
+    private fun normalizedStart(category: NoteCategory, startAtMillis: Long?): Long? =
+        if (category == NoteCategory.RECURRING_TASKS) {
+            requireNotNull(startAtMillis) { "Recurring task requires startAtMillis" }
+        } else null
+
+    private fun normalizedDuration(category: NoteCategory, durationMinutes: Long?): Long? =
+        if (category == NoteCategory.RECURRING_TASKS) {
+            requireNotNull(durationMinutes) { "Recurring task requires durationMinutes" }
+                .also { require(it > 0) { "durationMinutes must be positive" } }
+        } else null
+
+    private fun loadChecklist(noteId: Uuid): List<ChecklistItemModel> =
+        NoteChecklistItemsTable.selectAll()
+            .where { NoteChecklistItemsTable.noteId eq noteId }
+            .orderBy(NoteChecklistItemsTable.position to SortOrder.ASC)
+            .map { row ->
+                ChecklistItemModel(
+                    text = row[NoteChecklistItemsTable.text],
+                    isChecked = row[NoteChecklistItemsTable.isChecked]
+                )
+            }
+
+    private fun createNextOccurrence(row: ResultRow, parentId: Uuid, nowMillis: Long): Uuid {
+        val startMillis = requireNotNull(row[NotesTable.startAt]?.toInstant()?.toEpochMilli())
+        val rule = RepeatRule.valueOf(row[NotesTable.repeatRule])
+        val anchorDay = row[NotesTable.recurrenceAnchorDay]
+            ?: utcDayOfMonth(startMillis)
+        val nextStart = nextOccurrenceStart(startMillis, nowMillis, rule, anchorDay)
+        val nextId = Uuid.random()
+        NotesTable.insert {
+            it[id] = nextId
+            it[userId] = row[NotesTable.userId]
+            it[title] = row[NotesTable.title]
+            it[content] = row[NotesTable.content]
+            it[category] = NoteCategory.RECURRING_TASKS.name
+            it[deadlineAt] = null
+            it[startAt] = nextStart.toOffsetDateTimeUtc()
+            it[durationMinutes] = row[NotesTable.durationMinutes]
+            it[repeatRule] = rule.name
+            it[coinCount] = row[NotesTable.coinCount]
+            it[isCompleted] = false
+            it[recurrenceParentId] = parentId
+            it[recurrenceAnchorDay] = anchorDay
+        }
+        return nextId
+    }
 
     // Преобразует данные в нужный формат представления.
     private fun ResultRow.toNoteModel(checklist: List<ChecklistItemModel>): NoteModel =
@@ -197,7 +282,10 @@ class NotesRepository {
             category = NoteCategory.valueOf(this[NotesTable.category]),
             checklist = checklist,
             deadlineMillis = this[NotesTable.deadlineAt]?.toInstant()?.toEpochMilli(),
+            startAtMillis = this[NotesTable.startAt]?.toInstant()?.toEpochMilli(),
+            durationMinutes = this[NotesTable.durationMinutes],
             repeatRule = RepeatRule.valueOf(this[NotesTable.repeatRule]),
+            recurrenceParentId = this[NotesTable.recurrenceParentId],
             coinCount = this[NotesTable.coinCount],
             isCompleted = this[NotesTable.isCompleted],
             createdAt = this[NotesTable.createdAt].toInstant().toEpochMilli(),
@@ -208,3 +296,30 @@ class NotesRepository {
     private fun Long.toOffsetDateTimeUtc() =
         Instant.ofEpochMilli(this).atOffset(ZoneOffset.UTC)
 }
+
+internal fun nextOccurrenceStart(
+    startMillis: Long,
+    nowMillis: Long,
+    rule: RepeatRule,
+    anchorDay: Int = utcDayOfMonth(startMillis)
+): Long {
+    require(rule != RepeatRule.NONE)
+    var candidate = Instant.ofEpochMilli(startMillis).atZone(ZoneOffset.UTC)
+    do {
+        candidate = when (rule) {
+            RepeatRule.DAILY -> candidate.plusDays(1)
+            RepeatRule.WEEKLY -> candidate.plusWeeks(1)
+            RepeatRule.MONTHLY -> candidate.plusMonthsClamped(anchorDay)
+            RepeatRule.NONE -> error("Repeat rule is required")
+        }
+    } while (candidate.toInstant().toEpochMilli() <= nowMillis)
+    return candidate.toInstant().toEpochMilli()
+}
+
+private fun ZonedDateTime.plusMonthsClamped(anchorDay: Int): ZonedDateTime {
+    val nextMonth = withDayOfMonth(1).plusMonths(1)
+    return nextMonth.withDayOfMonth(minOf(anchorDay, nextMonth.toLocalDate().lengthOfMonth()))
+}
+
+private fun utcDayOfMonth(millis: Long): Int =
+    Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).dayOfMonth

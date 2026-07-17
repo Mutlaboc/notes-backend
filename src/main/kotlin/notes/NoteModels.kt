@@ -10,7 +10,7 @@ import kotlin.uuid.Uuid
 enum class NoteCategory {
     SHOPPING,
     TASKS,
-    NOTES
+    RECURRING_TASKS
 }
 
 @Serializable
@@ -36,7 +36,10 @@ data class NoteModel(
     val category: NoteCategory,
     val checklist: List<ChecklistItemModel>,
     val deadlineMillis: Long?,
+    val startAtMillis: Long?,
+    val durationMinutes: Long?,
     val repeatRule: RepeatRule,
+    val recurrenceParentId: Uuid?,
     val coinCount: Int,
     val isCompleted: Boolean,
     val createdAt: Long,

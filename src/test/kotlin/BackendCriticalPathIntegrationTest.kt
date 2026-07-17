@@ -207,8 +207,7 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
                   "content":"ignored for shopping",
                   "category":"SHOPPING",
                   "checklist":[{"text":" Milk ","isChecked":false}],
-                  "deadlineMillis":1893456000000,
-                  "repeatRule":"MONTHLY",
+                  "repeatRule":"NONE",
                   "coinCount":2,
                   "isCompleted":false
                 }
@@ -255,9 +254,10 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
                 {
                   "title":"Updated task",
                   "content":"Task body",
-                  "category":"TASKS",
+                  "category":"RECURRING_TASKS",
                   "checklist":[{"text":"ignored","isChecked":true}],
-                  "deadlineMillis":1893456000000,
+                  "startAtMillis":1893456000000,
+                  "durationMinutes":60,
                   "repeatRule":"WEEKLY",
                   "coinCount":3,
                   "isCompleted":true
@@ -269,7 +269,7 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
 
         assertEquals(HttpStatusCode.OK, update.status)
         assertEquals(noteId, updated["id"]?.jsonPrimitive?.content)
-        assertEquals("TASKS", updated["category"]?.jsonPrimitive?.content)
+        assertEquals("RECURRING_TASKS", updated["category"]?.jsonPrimitive?.content)
         assertEquals("Task body", updated["content"]?.jsonPrimitive?.content)
         assertEquals(0, updated["checklist"]?.jsonArray?.size)
         assertEquals("WEEKLY", updated["repeatRule"]?.jsonPrimitive?.content)
@@ -289,20 +289,21 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
     }
 
     @Test
-    fun notesAcceptFullRepeatRuleEnumForTasks() = testApplication {
+    fun notesAcceptRepeatRulesForRecurringTasks() = testApplication {
         startBackend()
 
         val owner = registerUser(email = "repeat-rules-${UUID.randomUUID()}@example.com")
 
-        listOf("NONE", "DAILY", "WEEKLY", "MONTHLY").forEach { repeatRule ->
+        listOf("DAILY", "WEEKLY", "MONTHLY").forEach { repeatRule ->
             val create = client.post("/notes") {
                 bearerAuth(owner.accessToken)
                 jsonBody(
                     """
                     {
                       "title":"Task $repeatRule",
-                      "category":"TASKS",
-                      "deadlineMillis":1893456000000,
+                      "category":"RECURRING_TASKS",
+                      "startAtMillis":1893456000000,
+                      "durationMinutes":60,
                       "repeatRule":"$repeatRule"
                     }
                     """.trimIndent()
@@ -341,10 +342,11 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
             jsonBody("""{"isCompleted":true}""")
         }
         val toggled = toggle.jsonObject()
+        val completedNote = toggled["completedNote"]?.jsonObject ?: error("completed note missing")
 
         assertEquals(HttpStatusCode.OK, toggle.status)
-        assertEquals(noteId, toggled["id"]?.jsonPrimitive?.content)
-        assertEquals("true", toggled["isCompleted"]?.jsonPrimitive?.content)
+        assertEquals(noteId, completedNote["id"]?.jsonPrimitive?.content)
+        assertEquals("true", completedNote["isCompleted"]?.jsonPrimitive?.content)
     }
 
     @Test

@@ -45,7 +45,7 @@ fun Route.notesRoutes(
             post {
                 val userId = call.requireCurrentUserId() ?: return@post
                 val request = call.receive<CreateNoteRequestDto>()
-                if (request.coinCount < 0) {
+                if (request.coinCount < 0 || !request.hasValidSchedule()) {
                     return@post call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST)
                 }
                 val created = notesService.create(userId, request)
@@ -57,7 +57,7 @@ fun Route.notesRoutes(
                 val noteId = call.parameters["id"]?.toUuidOrNull()
                     ?: return@put call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_NOTE_ID)
                 val request = call.receive<UpdateNoteRequestDto>()
-                if (request.coinCount < 0) {
+                if (request.coinCount < 0 || !request.hasValidSchedule()) {
                     return@put call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST)
                 }
 
@@ -98,3 +98,19 @@ fun Route.notesRoutes(
 // Преобразует данные в нужный формат представления.
 private fun String.toUuidOrNull(): Uuid? =
     runCatching { Uuid.parse(this) }.getOrNull()
+
+private fun CreateNoteRequestDto.hasValidSchedule(): Boolean = when (category) {
+    NoteCategory.RECURRING_TASKS -> startAtMillis != null && durationMinutes != null &&
+        durationMinutes > 0 && repeatRule != RepeatRule.NONE && deadlineMillis == null
+    NoteCategory.TASKS -> startAtMillis == null && durationMinutes == null && repeatRule == RepeatRule.NONE
+    NoteCategory.SHOPPING -> deadlineMillis == null && startAtMillis == null &&
+        durationMinutes == null && repeatRule == RepeatRule.NONE
+}
+
+private fun UpdateNoteRequestDto.hasValidSchedule(): Boolean = when (category) {
+    NoteCategory.RECURRING_TASKS -> startAtMillis != null && durationMinutes != null &&
+        durationMinutes > 0 && repeatRule != RepeatRule.NONE && deadlineMillis == null
+    NoteCategory.TASKS -> startAtMillis == null && durationMinutes == null && repeatRule == RepeatRule.NONE
+    NoteCategory.SHOPPING -> deadlineMillis == null && startAtMillis == null &&
+        durationMinutes == null && repeatRule == RepeatRule.NONE
+}

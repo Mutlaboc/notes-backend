@@ -1,9 +1,11 @@
 {
   "title": "Updated task",
   "content": "Task body",
-  "category": "TASKS",
+  "category": "RECURRING_TASKS",
   "checklist": [],
-  "deadlineMillis": 1893456000000,
+  "deadlineMillis": null,
+  "startAtMillis": 1893456000000,
+  "durationMinutes": 60,
   "repeatRule": "WEEKLY",
   "coinCount": 3,
   "isCompleted": true

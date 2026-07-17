@@ -29,8 +29,10 @@ open class NotesService(
         repository.delete(userId, noteId)
 
     // Обновляет статус выполнения заметки.
-    open suspend fun updateCompletion(userId: Uuid, noteId: Uuid, isCompleted: Boolean): NoteResponseDto? =
-        repository.updateCompletion(userId, noteId, isCompleted)?.toDto()
+    open suspend fun updateCompletion(userId: Uuid, noteId: Uuid, isCompleted: Boolean): NoteCompletionResponseDto? =
+        repository.updateCompletion(userId, noteId, isCompleted)?.let { (completed, next) ->
+            NoteCompletionResponseDto(completed.toDto(), next?.toDto())
+        }
 
     // Преобразует данные в нужный формат представления.
     private fun NoteModel.toDto(): NoteResponseDto =
@@ -46,6 +48,8 @@ open class NotesService(
                 )
             },
             deadlineMillis = deadlineMillis,
+            startAtMillis = startAtMillis,
+            durationMinutes = durationMinutes,
             repeatRule = repeatRule,
             coinCount = coinCount,
             isCompleted = isCompleted,

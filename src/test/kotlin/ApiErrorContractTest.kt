@@ -23,6 +23,7 @@ import com.example.mutlabocnotes.homecards.HomeCardsRepository
 import com.example.mutlabocnotes.homecards.homeCardsRoutes
 import com.example.mutlabocnotes.notes.CreateNoteRequestDto
 import com.example.mutlabocnotes.notes.NoteResponseDto
+import com.example.mutlabocnotes.notes.NoteCompletionResponseDto
 import com.example.mutlabocnotes.notes.NotesRepository
 import com.example.mutlabocnotes.notes.NotesService
 import com.example.mutlabocnotes.notes.UpdateNoteCompletionRequestDto
@@ -346,7 +347,7 @@ class ApiErrorContractTest {
             userId: Uuid,
             noteId: Uuid,
             isCompleted: Boolean
-        ): NoteResponseDto? = null
+        ): NoteCompletionResponseDto? = null
 
         override suspend fun getAll(userId: Uuid): List<NoteResponseDto> = emptyList()
 
