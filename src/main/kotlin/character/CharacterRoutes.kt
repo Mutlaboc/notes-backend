@@ -43,14 +43,48 @@ fun Route.characterRoutes(
                 if (request.characterXp < 0 || request.skillXp < 0) {
                     return@post call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST)
                 }
+                val operationId = request.operationId?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                if (request.operationId != null && operationId == null) {
+                    return@post call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST)
+                }
                 call.respond(
                     repository.addExperience(
                         userId = userId,
                         characterXp = request.characterXp,
                         skillKey = request.skillKey,
                         skillXp = request.skillXp,
+                        operationId = operationId,
                     )
                 )
+            }
+
+            post("/stat-upgrades") {
+                val userId = call.requireCurrentUserId()?.let { UUID.fromString(it.toString()) } ?: return@post
+                val request = call.receive<CharacterStatUpgradeRequestDto>()
+                val operationId = runCatching { UUID.fromString(request.operationId) }.getOrNull()
+                    ?: return@post call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST)
+                if (request.statKey.isBlank()) {
+                    return@post call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST)
+                }
+                val updated = runCatching { repository.upgradeStat(userId, operationId, request.statKey) }
+                    .getOrElse {
+                        return@post call.respondApiError(
+                            if (it is IllegalStateException) HttpStatusCode.Conflict else HttpStatusCode.BadRequest,
+                            ApiErrorCodes.INVALID_REQUEST,
+                        )
+                    }
+                call.respond(updated)
+            }
+
+            post("/rename") {
+                val userId = call.requireCurrentUserId()?.let { UUID.fromString(it.toString()) } ?: return@post
+                val request = call.receive<CharacterRenameRequestDto>()
+                val operationId = runCatching { UUID.fromString(request.operationId) }.getOrNull()
+                    ?: return@post call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST)
+                if (request.name.isBlank()) {
+                    return@post call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST)
+                }
+                call.respond(repository.rename(userId, operationId, request.name.trim()))
             }
         }
     }

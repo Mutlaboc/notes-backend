@@ -3,6 +3,11 @@ ALTER TABLE notes ADD COLUMN duration_minutes BIGINT;
 ALTER TABLE notes ADD COLUMN recurrence_parent_id UUID REFERENCES notes(id) ON DELETE SET NULL;
 ALTER TABLE notes ADD COLUMN recurrence_anchor_day INTEGER;
 
+-- The legacy constraint only permits SHOPPING/TASKS/NOTES. Drop it before
+-- converting repeating TASKS to RECURRING_TASKS; the final stricter constraint
+-- is installed below in the same transaction.
+ALTER TABLE notes DROP CONSTRAINT notes_category_check;
+
 UPDATE notes
 SET category = 'RECURRING_TASKS',
     start_at = COALESCE(deadline_at, created_at),
@@ -13,7 +18,6 @@ WHERE category = 'TASKS' AND repeat_rule <> 'NONE';
 
 UPDATE notes SET category = 'TASKS' WHERE category = 'NOTES';
 
-ALTER TABLE notes DROP CONSTRAINT notes_category_check;
 ALTER TABLE notes ADD CONSTRAINT notes_category_check
     CHECK (category IN ('SHOPPING', 'TASKS', 'RECURRING_TASKS'));
 ALTER TABLE notes ADD CONSTRAINT notes_recurring_fields_check CHECK (

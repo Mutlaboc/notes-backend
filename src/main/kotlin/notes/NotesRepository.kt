@@ -85,12 +85,24 @@ class NotesRepository {
 
     // Создаёт новую заметку и связанный чеклист.
     suspend fun create(userId: Uuid, request: CreateNoteRequestDto): NoteModel {
+        val mutationId = request.clientMutationId
+            ?.let { runCatching { Uuid.parse(it) }.getOrNull() }
+        if (mutationId != null) {
+            val existingId = DatabaseFactory.dbQuery {
+                NotesTable.selectAll()
+                    .where { (NotesTable.userId eq userId) and (NotesTable.clientMutationId eq mutationId) }
+                    .singleOrNull()
+                    ?.get(NotesTable.id)
+            }
+            if (existingId != null) return getById(userId, existingId)!!
+        }
         val noteId = Uuid.random()
 
         DatabaseFactory.dbQuery {
             NotesTable.insert {
                 it[id] = noteId
                 it[this.userId] = userId
+                it[clientMutationId] = mutationId
                 it[title] = request.title
                 it[content] = normalizedContent(request.category, request.content)
                 it[category] = request.category.name

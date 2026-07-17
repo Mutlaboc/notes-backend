@@ -29,6 +29,14 @@ data class CharacterSheetDto(
     val xpToNext: Int,
     val stats: List<CharacterStatDto>,
     val skills: List<CharacterSkillDto>,
+    val wallet: CharacterWalletDto = CharacterWalletDto(),
+)
+
+@Serializable
+data class CharacterWalletDto(
+    val earnedCoins: Int = 0,
+    val spentCoins: Int = 0,
+    val availableCoins: Int = 0,
 )
 
 // Тело запроса на полное обновление листа персонажа.
@@ -48,4 +56,17 @@ data class CharacterXpRequestDto(
     val characterXp: Int = 0,
     val skillKey: String? = null,
     val skillXp: Int = 0,
+    val operationId: String? = null,
+)
+
+@Serializable
+data class CharacterStatUpgradeRequestDto(
+    val operationId: String,
+    val statKey: String,
+)
+
+@Serializable
+data class CharacterRenameRequestDto(
+    val operationId: String,
+    val name: String,
 )

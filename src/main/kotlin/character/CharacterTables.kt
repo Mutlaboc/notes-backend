@@ -42,3 +42,21 @@ object CharacterSkillsTable : Table("character_skills") {
 
     override val primaryKey = PrimaryKey(id)
 }
+
+object CharacterCoinLedgerTable : Table("character_coin_ledger") {
+    val operationId = javaUUID("operation_id")
+    val userId = javaUUID("user_id")
+    val statKey = text("stat_key")
+    val amount = integer("amount")
+    val createdAt = timestampWithTimeZone("created_at")
+
+    override val primaryKey = PrimaryKey(userId, operationId)
+}
+
+object CharacterXpOperationsTable : Table("character_xp_operations") {
+    val operationId = javaUUID("operation_id")
+    val userId = javaUUID("user_id")
+    val createdAt = timestampWithTimeZone("created_at")
+
+    override val primaryKey = PrimaryKey(userId, operationId)
+}

@@ -39,7 +39,8 @@ data class CreateNoteRequestDto(
     val durationMinutes: Long? = null,
     val repeatRule: RepeatRule = RepeatRule.NONE,
     val coinCount: Int = 0,
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
+    val clientMutationId: String? = null
 )
 
 // DTO-модель для обмена данными между API и доменом.

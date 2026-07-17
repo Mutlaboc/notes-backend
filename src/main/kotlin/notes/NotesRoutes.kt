@@ -45,7 +45,8 @@ fun Route.notesRoutes(
             post {
                 val userId = call.requireCurrentUserId() ?: return@post
                 val request = call.receive<CreateNoteRequestDto>()
-                if (request.coinCount < 0 || !request.hasValidSchedule()) {
+                if (request.coinCount < 0 || !request.hasValidSchedule() ||
+                    request.clientMutationId?.let { runCatching { Uuid.parse(it) }.isFailure } == true) {
                     return@post call.respondApiError(HttpStatusCode.BadRequest, ApiErrorCodes.INVALID_REQUEST)
                 }
                 val created = notesService.create(userId, request)

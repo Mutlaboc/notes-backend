@@ -32,4 +32,5 @@ data class HomeCardUpsertRequestDto(
     val fields: List<HomeFieldDto>,
     val note: String,
     val links: List<String>,
+    val clientMutationId: String? = null,
 )

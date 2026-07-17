@@ -1,5 +1,8 @@
+@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
 package com.example.mutlabocnotes.character
 
+import com.example.mutlabocnotes.database.table.NotesTable
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
@@ -72,6 +75,7 @@ open class CharacterRepository {
         characterXp: Int,
         skillKey: String?,
         skillXp: Int,
+        operationId: UUID? = null,
     ): CharacterSheetDto = transaction {
         val now = OffsetDateTime.now(ZoneOffset.UTC)
 
@@ -81,6 +85,17 @@ open class CharacterRepository {
             .singleOrNull()
         if (exists == null) {
             seedDefault(userId)
+        }
+        CharacterSheetsTable.selectAll()
+            .where { CharacterSheetsTable.userId eq userId }
+            .forUpdate()
+            .single()
+        if (operationId != null && CharacterXpOperationsTable.selectAll().where {
+                (CharacterXpOperationsTable.userId eq userId) and
+                    (CharacterXpOperationsTable.operationId eq operationId)
+            }.singleOrNull() != null
+        ) {
+            return@transaction readSheet(userId)
         }
 
         if (characterXp > 0) {
@@ -130,6 +145,83 @@ open class CharacterRepository {
             }
         }
 
+        if (operationId != null) {
+            CharacterXpOperationsTable.insert {
+                it[CharacterXpOperationsTable.operationId] = operationId
+                it[CharacterXpOperationsTable.userId] = userId
+                it[createdAt] = now
+            }
+        }
+
+        readSheet(userId)
+    }
+
+    /** Atomically validates the wallet, records the spend and increments one stat. */
+    open fun upgradeStat(userId: UUID, operationId: UUID, statKey: String): CharacterSheetDto = transaction {
+        if (CharacterSheetsTable.selectAll().where { CharacterSheetsTable.userId eq userId }.singleOrNull() == null) {
+            seedDefault(userId)
+        }
+        CharacterSheetsTable.selectAll()
+            .where { CharacterSheetsTable.userId eq userId }
+            .forUpdate()
+            .single()
+        val existingOperation = CharacterCoinLedgerTable.selectAll().where {
+            (CharacterCoinLedgerTable.userId eq userId) and
+                (CharacterCoinLedgerTable.operationId eq operationId)
+        }.singleOrNull()
+        if (existingOperation != null) return@transaction readSheet(userId)
+
+        val stat = CharacterStatsTable.selectAll().where {
+            (CharacterStatsTable.userId eq userId) and (CharacterStatsTable.statKey eq statKey)
+        }.forUpdate().singleOrNull() ?: throw IllegalArgumentException("Unknown stat")
+        val currentValue = stat[CharacterStatsTable.value]
+        require(currentValue < MAX_STAT) { "Stat is already at maximum" }
+
+        val wallet = readWallet(userId)
+        val cost = statUpgradeCost(currentValue)
+        check(wallet.availableCoins >= cost) { "Insufficient balance" }
+        val now = OffsetDateTime.now(ZoneOffset.UTC)
+
+        CharacterCoinLedgerTable.insert {
+            it[CharacterCoinLedgerTable.operationId] = operationId
+            it[CharacterCoinLedgerTable.userId] = userId
+            it[CharacterCoinLedgerTable.statKey] = statKey
+            it[amount] = cost
+            it[createdAt] = now
+        }
+        CharacterStatsTable.update({
+            (CharacterStatsTable.userId eq userId) and (CharacterStatsTable.statKey eq statKey)
+        }) {
+            it[value] = currentValue + 1
+        }
+        CharacterSheetsTable.update({ CharacterSheetsTable.userId eq userId }) { it[updatedAt] = now }
+        readSheet(userId)
+    }
+
+    /** A narrow, idempotent rename operation kept separate from full-sheet PUT. */
+    open fun rename(userId: UUID, operationId: UUID, name: String): CharacterSheetDto = transaction {
+        if (CharacterSheetsTable.selectAll().where { CharacterSheetsTable.userId eq userId }.singleOrNull() == null) {
+            seedDefault(userId)
+        }
+        CharacterSheetsTable.selectAll()
+            .where { CharacterSheetsTable.userId eq userId }
+            .forUpdate()
+            .single()
+        val repeated = CharacterXpOperationsTable.selectAll().where {
+            (CharacterXpOperationsTable.userId eq userId) and
+                (CharacterXpOperationsTable.operationId eq operationId)
+        }.singleOrNull() != null
+        if (repeated) return@transaction readSheet(userId)
+        val now = OffsetDateTime.now(ZoneOffset.UTC)
+        CharacterSheetsTable.update({ CharacterSheetsTable.userId eq userId }) {
+            it[CharacterSheetsTable.name] = name
+            it[updatedAt] = now
+        }
+        CharacterXpOperationsTable.insert {
+            it[CharacterXpOperationsTable.operationId] = operationId
+            it[CharacterXpOperationsTable.userId] = userId
+            it[createdAt] = now
+        }
         readSheet(userId)
     }
 
@@ -217,6 +309,22 @@ open class CharacterRepository {
             xpToNext = sheet[CharacterSheetsTable.xpToNext],
             stats = stats,
             skills = skills,
+            wallet = readWallet(userId),
+        )
+    }
+
+    private fun readWallet(userId: UUID): CharacterWalletDto {
+        val noteUserId = kotlin.uuid.Uuid.parse(userId.toString())
+        val earned = NotesTable.selectAll().where {
+            (NotesTable.userId eq noteUserId) and (NotesTable.isCompleted eq true)
+        }.sumOf { it[NotesTable.coinCount] }
+        val spent = CharacterCoinLedgerTable.selectAll().where {
+            CharacterCoinLedgerTable.userId eq userId
+        }.sumOf { it[CharacterCoinLedgerTable.amount] }
+        return CharacterWalletDto(
+            earnedCoins = earned,
+            spentCoins = spent,
+            availableCoins = (earned - spent).coerceAtLeast(0),
         )
     }
 
@@ -227,7 +335,12 @@ open class CharacterRepository {
         const val DEFAULT_XP_TO_NEXT = 100
 
         const val MAX_LEVEL = 100
+        const val MAX_STAT = 99
         const val BASE_XP = 100
+
+        fun statUpgradeCost(value: Int): Int =
+            (value.coerceAtLeast(0).toLong() * value.coerceAtLeast(0).toLong())
+                .coerceIn(1L, Int.MAX_VALUE.toLong()).toInt()
 
         // Experience required to advance FROM [level]: 100 * 2^(level-1), capped at level 100.
         // Clamped to Int range so it always fits the DB column.

@@ -9,6 +9,7 @@ object HomeCardsTable : Table("home_cards") {
     val id = javaUUID("id")
     val userId = javaUUID("user_id")
     val sourceFirestoreId = text("source_firestore_id").nullable()
+    val clientMutationId = javaUUID("client_mutation_id").nullable()
     val title = text("title")
     val section = text("section")
     val note = text("note")

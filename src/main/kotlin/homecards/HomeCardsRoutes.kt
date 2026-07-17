@@ -107,4 +107,5 @@ private val validHomeCardSections = setOf(
 )
 
 private fun HomeCardUpsertRequestDto.isValid(): Boolean =
-    section in validHomeCardSections && links.none { it.isBlank() }
+    section in validHomeCardSections && links.none { it.isBlank() } &&
+        (clientMutationId == null || runCatching { UUID.fromString(clientMutationId) }.isSuccess)

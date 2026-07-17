@@ -10,6 +10,7 @@ object NotesTable : Table("notes") {
     val id = uuid("id")
     val userId = uuid("user_id")
     val sourceFirestoreId = text("source_firestore_id").nullable()
+    val clientMutationId = uuid("client_mutation_id").nullable()
     val title = text("title")
     val content = text("content")
     val category = text("category")

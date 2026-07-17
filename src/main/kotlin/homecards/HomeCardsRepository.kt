@@ -35,12 +35,21 @@ open class HomeCardsRepository {
     }
 
     open fun createForUser(userId: UUID, request: HomeCardUpsertRequestDto): HomeCardDto = transaction {
+        val mutationId = request.clientMutationId
+            ?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+        if (mutationId != null) {
+            HomeCardsTable.selectAll()
+                .where { (HomeCardsTable.userId eq userId) and (HomeCardsTable.clientMutationId eq mutationId) }
+                .singleOrNull()
+                ?.let { return@transaction it.toHomeCardDto() }
+        }
         val cardId = UUID.randomUUID()
         val now = OffsetDateTime.now(ZoneOffset.UTC)
 
         HomeCardsTable.insert {
             it[HomeCardsTable.id] = cardId
             it[HomeCardsTable.userId] = userId
+            it[HomeCardsTable.clientMutationId] = mutationId
             it[HomeCardsTable.title] = request.title
             it[HomeCardsTable.section] = request.section
             it[HomeCardsTable.note] = request.note
