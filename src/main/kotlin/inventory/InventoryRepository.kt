@@ -12,13 +12,13 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 
-// Репозиторий инвентаря: чтение с авто-созданием стартового набора, equip/unequip
-// с идемпотентностью по operationId (паттерн — как в CharacterRepository).
+// Репозиторий инвентаря: equip/unequip с идемпотентностью по operationId
+// (паттерн — как в CharacterRepository). Стартового набора нет: новый пользователь
+// начинает с пустым инвентарём, предметы приходят из событий фокус-таймера.
 open class InventoryRepository {
 
-    // Возвращает инвентарь пользователя, создавая стартовый набор при первом обращении.
+    // Возвращает инвентарь пользователя (пустой для нового пользователя).
     open fun getOrCreateForUser(userId: UUID): InventoryDto = transaction {
-        seedIfMissing(userId)
         readInventory(userId)
     }
 
@@ -28,7 +28,6 @@ open class InventoryRepository {
      * [IllegalArgumentException] — предмет нельзя надеть (400).
      */
     open fun equip(userId: UUID, operationId: UUID, itemKey: String): InventoryDto = transaction {
-        seedIfMissing(userId)
         lockInventory(userId)
         if (operationAlreadyApplied(userId, operationId)) return@transaction readInventory(userId)
 
@@ -63,7 +62,6 @@ open class InventoryRepository {
      */
     open fun unequip(userId: UUID, operationId: UUID, slot: String): InventoryDto = transaction {
         val parsed = EquipSlot.fromKeyOrNull(slot) ?: throw IllegalArgumentException("Unknown slot")
-        seedIfMissing(userId)
         lockInventory(userId)
         if (operationAlreadyApplied(userId, operationId)) return@transaction readInventory(userId)
 
@@ -99,41 +97,6 @@ open class InventoryRepository {
             it[InventoryOperationsTable.operationId] = operationId
             it[InventoryOperationsTable.userId] = userId
             it[createdAt] = now
-        }
-    }
-
-    private fun seedIfMissing(userId: UUID) {
-        val exists = InventoryItemsTable.selectAll()
-            .where { InventoryItemsTable.userId eq userId }
-            .firstOrNull() != null
-        if (exists) return
-
-        val now = OffsetDateTime.now(ZoneOffset.UTC)
-        starterItems().forEachIndexed { index, item ->
-            val itemId = UUID.randomUUID()
-            InventoryItemsTable.insert {
-                it[id] = itemId
-                it[InventoryItemsTable.userId] = userId
-                it[itemKey] = item.id
-                it[position] = index
-                it[name] = item.name
-                it[description] = item.description
-                it[icon] = item.icon
-                it[slot] = item.slot
-                it[rarity] = item.rarity
-                it[equippedSlot] = item.equippedSlot
-                it[createdAt] = now
-                it[updatedAt] = now
-            }
-            item.bonuses.forEachIndexed { bonusIndex, bonus ->
-                InventoryItemBonusesTable.insert {
-                    it[InventoryItemBonusesTable.itemId] = itemId
-                    it[position] = bonusIndex
-                    it[statKey] = bonus.statKey
-                    it[statName] = bonus.statName
-                    it[value] = bonus.value
-                }
-            }
         }
     }
 
@@ -176,44 +139,4 @@ open class InventoryRepository {
         )
     }
 
-    private companion object {
-        // Стартовый набор нового пользователя. Ключи статов — как в CharacterRepository.
-        fun starterItems(): List<InventoryItemDto> = listOf(
-            InventoryItemDto(
-                id = "wooden-sword",
-                name = "Деревянный меч",
-                description = "Выструган из уютного полена. Для настоящих подвигов по дому.",
-                icon = "🗡",
-                slot = EquipSlot.WEAPON.name,
-                rarity = ItemRarity.COMMON.name,
-                bonuses = listOf(ItemBonusDto("STRENGTH", "Сила", 1)),
-            ),
-            InventoryItemDto(
-                id = "straw-hat",
-                name = "Соломенная шляпа",
-                description = "Пахнет летом и свежескошенной травой.",
-                icon = "👒",
-                slot = EquipSlot.HEAD.name,
-                rarity = ItemRarity.COMMON.name,
-                bonuses = listOf(ItemBonusDto("WISDOM", "Мудрость", 1)),
-            ),
-            InventoryItemDto(
-                id = "cozy-apron",
-                name = "Уютный фартук",
-                description = "С большим карманом для полезных мелочей.",
-                icon = "🦺",
-                slot = EquipSlot.BODY.name,
-                rarity = ItemRarity.COMMON.name,
-                bonuses = listOf(ItemBonusDto("CONSTITUTION", "Телосложение", 1)),
-            ),
-            InventoryItemDto(
-                id = "lucky-acorn",
-                name = "Счастливый жёлудь",
-                description = "Сувенир из леса. Говорят, приносит удачу.",
-                icon = "🌰",
-                slot = null,
-                rarity = ItemRarity.RARE.name,
-            ),
-        )
-    }
 }

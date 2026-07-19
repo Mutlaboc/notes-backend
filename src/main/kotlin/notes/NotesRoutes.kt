@@ -103,7 +103,9 @@ private fun String.toUuidOrNull(): Uuid? =
 private fun CreateNoteRequestDto.hasValidSchedule(): Boolean = when (category) {
     NoteCategory.RECURRING_TASKS -> startAtMillis != null && durationMinutes != null &&
         durationMinutes > 0 && repeatRule != RepeatRule.NONE && deadlineMillis == null
-    NoteCategory.TASKS -> startAtMillis == null && durationMinutes == null && repeatRule == RepeatRule.NONE
+    // У обычных задач продолжительность необязательна (оценка), но если задана — положительна.
+    NoteCategory.TASKS -> startAtMillis == null && (durationMinutes == null || durationMinutes > 0) &&
+        repeatRule == RepeatRule.NONE
     NoteCategory.SHOPPING -> deadlineMillis == null && startAtMillis == null &&
         durationMinutes == null && repeatRule == RepeatRule.NONE
 }
@@ -111,7 +113,9 @@ private fun CreateNoteRequestDto.hasValidSchedule(): Boolean = when (category) {
 private fun UpdateNoteRequestDto.hasValidSchedule(): Boolean = when (category) {
     NoteCategory.RECURRING_TASKS -> startAtMillis != null && durationMinutes != null &&
         durationMinutes > 0 && repeatRule != RepeatRule.NONE && deadlineMillis == null
-    NoteCategory.TASKS -> startAtMillis == null && durationMinutes == null && repeatRule == RepeatRule.NONE
+    // У обычных задач продолжительность необязательна (оценка), но если задана — положительна.
+    NoteCategory.TASKS -> startAtMillis == null && (durationMinutes == null || durationMinutes > 0) &&
+        repeatRule == RepeatRule.NONE
     NoteCategory.SHOPPING -> deadlineMillis == null && startAtMillis == null &&
         durationMinutes == null && repeatRule == RepeatRule.NONE
 }

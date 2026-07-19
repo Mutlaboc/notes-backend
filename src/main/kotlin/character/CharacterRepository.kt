@@ -329,7 +329,7 @@ open class CharacterRepository {
     }
 
     private companion object {
-        const val DEFAULT_NAME = "Мутлабок"
+        const val DEFAULT_NAME = "Player"
         const val DEFAULT_LEVEL = 1
         const val DEFAULT_XP = 0
         const val DEFAULT_XP_TO_NEXT = 100
@@ -362,10 +362,9 @@ open class CharacterRepository {
             CharacterStatDto("CHARISMA", "Харизма", "Уверенность, самообладание и обаяние", 1),
         )
 
+        // Единственный стартовый навык — Лесоруб; остальные открываются событиями.
         fun defaultSkills(): List<CharacterSkillDto> = listOf(
             CharacterSkillDto("LUMBERJACK", "Лесоруб", 1, 0.0),
-            CharacterSkillDto("CARPENTER", "Плотник", 1, 0.0),
-            CharacterSkillDto("ARCHIVIST", "Архивариус", 1, 0.0),
         )
     }
 }

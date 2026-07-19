@@ -316,6 +316,41 @@ class BackendCriticalPathIntegrationTest : BackendIntegrationTestSupport() {
         }
     }
 
+    // Регрессия: у обычной задачи допустима необязательная «предполагаемая
+    // продолжительность» (раньше её резал CHECK notes_recurring_fields_check).
+    @Test
+    fun tasksAcceptOptionalDurationEstimate() = testApplication {
+        startBackend()
+
+        val owner = registerUser(email = "task-duration-${UUID.randomUUID()}@example.com")
+
+        val create = client.post("/notes") {
+            bearerAuth(owner.accessToken)
+            jsonBody(
+                """
+                {
+                  "title":"Regular task with estimate",
+                  "category":"TASKS",
+                  "deadlineMillis":1893456000000,
+                  "durationMinutes":90
+                }
+                """.trimIndent()
+            )
+        }
+        val created = create.jsonObject()
+
+        assertEquals(HttpStatusCode.Created, create.status)
+        assertEquals("TASKS", created["category"]?.jsonPrimitive?.content)
+        assertEquals("90", created["durationMinutes"]?.jsonPrimitive?.content)
+
+        // Без продолжительности обычная задача тоже создаётся.
+        val withoutDuration = client.post("/notes") {
+            bearerAuth(owner.accessToken)
+            jsonBody("""{"title":"Task without estimate","category":"TASKS"}""")
+        }
+        assertEquals(HttpStatusCode.Created, withoutDuration.status)
+    }
+
     @Test
     fun notesCompletionRequiresAuthAndTogglesForOwner() = testApplication {
         startBackend()

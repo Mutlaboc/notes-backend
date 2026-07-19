@@ -242,11 +242,14 @@ class NotesRepository {
             requireNotNull(startAtMillis) { "Recurring task requires startAtMillis" }
         } else null
 
-    private fun normalizedDuration(category: NoteCategory, durationMinutes: Long?): Long? =
-        if (category == NoteCategory.RECURRING_TASKS) {
+    private fun normalizedDuration(category: NoteCategory, durationMinutes: Long?): Long? = when (category) {
+        NoteCategory.RECURRING_TASKS ->
             requireNotNull(durationMinutes) { "Recurring task requires durationMinutes" }
                 .also { require(it > 0) { "durationMinutes must be positive" } }
-        } else null
+        // Обычная задача: продолжительность-оценка сохраняется, если задана.
+        NoteCategory.TASKS -> durationMinutes?.also { require(it > 0) { "durationMinutes must be positive" } }
+        else -> null
+    }
 
     private fun loadChecklist(noteId: Uuid): List<ChecklistItemModel> =
         NoteChecklistItemsTable.selectAll()

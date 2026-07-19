@@ -1,26 +1,46 @@
 package com.example.mutlabocnotes
 
 import com.example.mutlabocnotes.inventory.InventoryDto
+import com.example.mutlabocnotes.inventory.InventoryItemBonusesTable
+import com.example.mutlabocnotes.inventory.InventoryItemsTable
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.testApplication
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.serialization.decodeFromString
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
-// Интеграционные тесты инвентаря: стартовый набор, equip/unequip, идемпотентность, ошибки.
+// Интеграционные тесты инвентаря: пустой старт, equip/unequip, идемпотентность, ошибки.
 class InventoryIntegrationTest : BackendIntegrationTestSupport() {
 
+    // Стартового набора больше нет: новый пользователь начинает с пустым инвентарём.
     @Test
-    fun getInventoryCreatesStarterSetOnFirstAccess() = testApplication {
+    fun getInventoryIsEmptyForNewUser() = testApplication {
         startBackend()
         val user = registerUser()
+
+        val response = client.get("/inventory") { bearerAuth(user.accessToken) }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        val inventory = json.decodeFromString<InventoryDto>(response.bodyAsText())
+        assertTrue(inventory.items.isEmpty())
+    }
+
+    @Test
+    fun seededItemsAreReturnedWithSlotAndBonuses() = testApplication {
+        startBackend()
+        val user = registerUser()
+        seedTestItems(user.user.id)
 
         val response = client.get("/inventory") { bearerAuth(user.accessToken) }
 
@@ -46,7 +66,7 @@ class InventoryIntegrationTest : BackendIntegrationTestSupport() {
     fun equipPutsItemIntoSlotAndIsIdempotent() = testApplication {
         startBackend()
         val user = registerUser()
-        client.get("/inventory") { bearerAuth(user.accessToken) }
+        seedTestItems(user.user.id)
         val operationId = UUID.randomUUID()
 
         val first = client.post("/inventory/equip") {
@@ -71,7 +91,7 @@ class InventoryIntegrationTest : BackendIntegrationTestSupport() {
     fun unequipClearsSlotAndEmptySlotIsNoOp() = testApplication {
         startBackend()
         val user = registerUser()
-        client.get("/inventory") { bearerAuth(user.accessToken) }
+        seedTestItems(user.user.id)
         client.post("/inventory/equip") {
             bearerAuth(user.accessToken)
             jsonBody("""{"operationId":"${UUID.randomUUID()}","itemId":"straw-hat"}""")
@@ -97,7 +117,7 @@ class InventoryIntegrationTest : BackendIntegrationTestSupport() {
     fun equipUsesUnifiedErrorContract() = testApplication {
         startBackend()
         val user = registerUser()
-        client.get("/inventory") { bearerAuth(user.accessToken) }
+        seedTestItems(user.user.id)
 
         // Неизвестный предмет -> 404 item_not_found.
         val missing = client.post("/inventory/equip") {
@@ -135,6 +155,8 @@ class InventoryIntegrationTest : BackendIntegrationTestSupport() {
         startBackend()
         val owner = registerUser(email = "inv-owner-${UUID.randomUUID()}@example.com")
         val other = registerUser(email = "inv-other-${UUID.randomUUID()}@example.com")
+        seedTestItems(owner.user.id)
+        seedTestItems(other.user.id)
 
         client.post("/inventory/equip") {
             bearerAuth(owner.accessToken)
@@ -145,5 +167,52 @@ class InventoryIntegrationTest : BackendIntegrationTestSupport() {
             client.get("/inventory") { bearerAuth(other.accessToken) }.bodyAsText()
         )
         assertTrue(otherInventory.items.none { it.equippedSlot != null })
+    }
+
+    // Кладёт пользователю тестовый набор предметов напрямую в БД
+    // (в проде предметы приходят только из событий фокус-таймера).
+    private fun seedTestItems(userIdRaw: String) {
+        val userId = UUID.fromString(userIdRaw)
+        val now = OffsetDateTime.now(ZoneOffset.UTC)
+        data class Seed(
+            val key: String,
+            val name: String,
+            val slot: String?,
+            val rarity: String,
+            val bonus: Triple<String, String, Int>?,
+        )
+        val seeds = listOf(
+            Seed("wooden-sword", "Деревянный меч", "WEAPON", "COMMON", Triple("STRENGTH", "Сила", 1)),
+            Seed("straw-hat", "Соломенная шляпа", "HEAD", "COMMON", Triple("WISDOM", "Мудрость", 1)),
+            Seed("lucky-acorn", "Счастливый жёлудь", null, "RARE", null),
+        )
+        transaction {
+            seeds.forEachIndexed { index, seed ->
+                val itemId = UUID.randomUUID()
+                InventoryItemsTable.insert {
+                    it[id] = itemId
+                    it[InventoryItemsTable.userId] = userId
+                    it[itemKey] = seed.key
+                    it[position] = index
+                    it[name] = seed.name
+                    it[description] = ""
+                    it[icon] = "🎒"
+                    it[slot] = seed.slot
+                    it[rarity] = seed.rarity
+                    it[equippedSlot] = null
+                    it[createdAt] = now
+                    it[updatedAt] = now
+                }
+                seed.bonus?.let { (statKey, statName, value) ->
+                    InventoryItemBonusesTable.insert {
+                        it[InventoryItemBonusesTable.itemId] = itemId
+                        it[position] = 0
+                        it[InventoryItemBonusesTable.statKey] = statKey
+                        it[InventoryItemBonusesTable.statName] = statName
+                        it[InventoryItemBonusesTable.value] = value
+                    }
+                }
+            }
+        }
     }
 }
