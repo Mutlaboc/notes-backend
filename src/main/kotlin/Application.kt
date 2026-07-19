@@ -22,7 +22,9 @@ import com.example.mutlabocnotes.auth.readJwtConfig
 import com.example.mutlabocnotes.auth.readSocialAuthConfig
 import com.example.mutlabocnotes.character.characterRoutes
 import com.example.mutlabocnotes.database.DatabaseFactory
+import com.example.mutlabocnotes.events.eventsRoutes
 import com.example.mutlabocnotes.homecards.homeCardsRoutes
+import com.example.mutlabocnotes.inventory.inventoryRoutes
 import com.example.mutlabocnotes.notes.NotesRepository
 import com.example.mutlabocnotes.notes.NotesService
 import com.example.mutlabocnotes.notes.notesRoutes
@@ -141,6 +143,10 @@ fun Application.module() {
         homeCardsRoutes()
 
         characterRoutes()
+
+        inventoryRoutes()
+
+        eventsRoutes()
     }
 }
 

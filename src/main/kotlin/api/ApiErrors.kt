@@ -21,6 +21,7 @@ object ApiErrorCodes {
     const val INVALID_NOTE_ID = "invalid_note_id"
     const val CARD_NOT_FOUND = "card_not_found"
     const val INVALID_CARD_ID = "invalid_card_id"
+    const val ITEM_NOT_FOUND = "item_not_found"
     const val INTERNAL_SERVER_ERROR = "internal_server_error"
 }
 

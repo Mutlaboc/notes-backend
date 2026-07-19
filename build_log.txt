@@ -1,0 +1,15 @@
+Starting a Gradle Daemon (subsequent builds will be faster)
+> Task :clean
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :processResources
+> Task :compileKotlin
+w: file:///D:/Projects/notes-backend/src/main/kotlin/FlywayRunner.kt:45:35 This extension is shadowed by a member: 'fun propertyOrNull(path: String): ApplicationConfigValue?' defined in 'io.ktor.server.config.ApplicationConfig'.
+w: file:///D:/Projects/notes-backend/src/main/kotlin/auth/SocialAuthConfig.kt:22:31 This extension is shadowed by a member: 'fun propertyOrNull(path: String): ApplicationConfigValue?' defined in 'io.ktor.server.config.ApplicationConfig'.
+
+> Task :compileJava NO-SOURCE
+> Task :classes
+> Task :shadowJar
+
+BUILD SUCCESSFUL in 1m 4s
+4 actionable tasks: 4 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.3.0/userguide/configuration_cache_enabling.html
