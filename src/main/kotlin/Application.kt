@@ -20,6 +20,7 @@ import com.example.mutlabocnotes.auth.authRoutes
 import com.example.mutlabocnotes.auth.configureJwtAuthentication
 import com.example.mutlabocnotes.auth.readJwtConfig
 import com.example.mutlabocnotes.auth.readSocialAuthConfig
+import com.example.mutlabocnotes.achievements.achievementsRoutes
 import com.example.mutlabocnotes.character.characterRoutes
 import com.example.mutlabocnotes.database.DatabaseFactory
 import com.example.mutlabocnotes.events.eventsRoutes
@@ -147,6 +148,8 @@ fun Application.module() {
         inventoryRoutes()
 
         eventsRoutes()
+
+        achievementsRoutes()
     }
 }
 
